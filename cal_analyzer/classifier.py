@@ -1,5 +1,7 @@
 """Classify meetings as internal, client, or external."""
 
+from __future__ import annotations
+
 from enum import Enum
 
 

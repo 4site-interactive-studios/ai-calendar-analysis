@@ -5,6 +5,8 @@ All data is processed in-memory only -- nothing is written to disk
 to prevent PII persistence.
 """
 
+from __future__ import annotations
+
 import ssl
 import tempfile
 from datetime import datetime, timezone

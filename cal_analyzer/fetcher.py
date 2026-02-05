@@ -1,5 +1,7 @@
 """Fetch events from Google Calendar API."""
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from typing import Optional
 
