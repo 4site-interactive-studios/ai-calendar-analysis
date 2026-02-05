@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# Google API credentials (NEVER commit these)
+credentials.json
+token.json
+token.pickle
+
+# Config with sensitive data (users create their own from config.example.yaml)
+config.yaml
+config.local.yaml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output
+output/
+*.csv
+*.json
+!package.json
+!config.example.yaml

@@ -1,0 +1,51 @@
+# Calendar Analytics Configuration
+# Copy this to config.yaml and customize for your organization
+
+# Your company's email domains (used to classify internal vs external attendees)
+company_domains:
+  - "4sitestudios.com"
+  - "4site.com"
+
+# Company name (used in reports)
+company_name: "4Site Interactive Studios"
+
+# Known client domains and their display names
+# Events with attendees from these domains are classified as "client" meetings
+client_domains:
+  "clienta.org": "Client A"
+  "clientb.com": "Client B"
+  # Add more as needed: "domain.com": "Display Name"
+
+# Keywords in event titles that indicate client meetings
+client_title_keywords:
+  - "client"
+  - "kickoff"
+  - "stakeholder"
+  - "review"
+  - "demo"
+  - "presentation"
+  - "proposal"
+
+# Keywords in event titles that indicate internal meetings
+internal_title_keywords:
+  - "standup"
+  - "stand-up"
+  - "1:1"
+  - "one-on-one"
+  - "team sync"
+  - "sprint"
+  - "retro"
+  - "planning"
+  - "all hands"
+  - "all-hands"
+  - "lunch"
+  - "happy hour"
+
+# Calendar ID to analyze (default: primary)
+calendar_id: "primary"
+
+# Google API credentials file path
+credentials_file: "credentials.json"
+
+# Token storage path
+token_file: "token.json"

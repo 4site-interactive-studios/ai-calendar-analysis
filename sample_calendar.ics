@@ -1,0 +1,221 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//4Site Sample//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART:20250203T100000
+DTEND:20250203T103000
+SUMMARY:Team Standup
+UID:001@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250203T140000
+DTEND:20250203T150000
+SUMMARY:Client Kickoff - Website Redesign
+UID:002@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Jane Smith;PARTSTAT=ACCEPTED:mailto:jane@greenplanet.org
+ATTENDEE;CN=Tom Davis;PARTSTAT=ACCEPTED:mailto:tom@greenplanet.org
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250204T110000
+DTEND:20250204T120000
+SUMMARY:Sprint Planning
+UID:003@4site-sample
+ORGANIZER;CN=Sarah Johnson:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+ATTENDEE;CN=Lisa Park;PARTSTAT=ACCEPTED:mailto:lisa@4sitestudios.com
+RRULE:FREQ=WEEKLY;BYDAY=TU
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250204T150000
+DTEND:20250204T160000
+SUMMARY:GreenPlanet - Design Review
+UID:004@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Jane Smith;PARTSTAT=ACCEPTED:mailto:jane@greenplanet.org
+ATTENDEE;CN=Lisa Park;PARTSTAT=ACCEPTED:mailto:lisa@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250205T100000
+DTEND:20250205T103000
+SUMMARY:Team Standup
+UID:005@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250205T130000
+DTEND:20250205T140000
+SUMMARY:1:1 with Sarah
+UID:006@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250206T090000
+DTEND:20250206T100000
+SUMMARY:Fundraiser Gala - Proposal Review
+UID:007@4site-sample
+ORGANIZER;CN=Amy Wilson:mailto:amy@hopefoundation.org
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Amy Wilson;PARTSTAT=ACCEPTED:mailto:amy@hopefoundation.org
+ATTENDEE;CN=Robert Lee;PARTSTAT=ACCEPTED:mailto:robert@hopefoundation.org
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250206T140000
+DTEND:20250206T153000
+SUMMARY:All Hands Meeting
+UID:008@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+ATTENDEE;CN=Lisa Park;PARTSTAT=ACCEPTED:mailto:lisa@4sitestudios.com
+ATTENDEE;CN=David Kim;PARTSTAT=ACCEPTED:mailto:david@4sitestudios.com
+RRULE:FREQ=MONTHLY;BYDAY=1TH
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250207T100000
+DTEND:20250207T103000
+SUMMARY:Team Standup
+UID:009@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250207T110000
+DTEND:20250207T120000
+SUMMARY:Tech Architecture Discussion
+UID:010@4site-sample
+ORGANIZER;CN=Mike Chen:mailto:mike@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+ATTENDEE;CN=David Kim;PARTSTAT=ACCEPTED:mailto:david@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250210T100000
+DTEND:20250210T103000
+SUMMARY:Team Standup
+UID:011@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250210T133000
+DTEND:20250210T143000
+SUMMARY:GreenPlanet - Content Strategy
+UID:012@4site-sample
+ORGANIZER;CN=Jane Smith:mailto:jane@greenplanet.org
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Jane Smith;PARTSTAT=ACCEPTED:mailto:jane@greenplanet.org
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250211T110000
+DTEND:20250211T120000
+SUMMARY:Sprint Planning
+UID:013@4site-sample
+ORGANIZER;CN=Sarah Johnson:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+ATTENDEE;CN=Lisa Park;PARTSTAT=ACCEPTED:mailto:lisa@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250211T150000
+DTEND:20250211T160000
+SUMMARY:Hope Foundation - Donation Platform Demo
+UID:014@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Amy Wilson;PARTSTAT=ACCEPTED:mailto:amy@hopefoundation.org
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250212T100000
+DTEND:20250212T103000
+SUMMARY:Team Standup
+UID:015@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250212T140000
+DTEND:20250212T150000
+SUMMARY:Vendor Call - Hosting Migration
+UID:016@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+ATTENDEE;CN=Alex Turner;PARTSTAT=ACCEPTED:mailto:alex@cloudhost.io
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250213T090000
+DTEND:20250213T091500
+SUMMARY:Quick check - deploy status
+UID:017@4site-sample
+ORGANIZER;CN=Mike Chen:mailto:mike@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250213T100000
+DTEND:20250213T113000
+SUMMARY:GreenPlanet - QA Walkthrough
+UID:018@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Lisa Park;PARTSTAT=ACCEPTED:mailto:lisa@4sitestudios.com
+ATTENDEE;CN=Jane Smith;PARTSTAT=ACCEPTED:mailto:jane@greenplanet.org
+ATTENDEE;CN=Tom Davis;PARTSTAT=ACCEPTED:mailto:tom@greenplanet.org
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250214T100000
+DTEND:20250214T103000
+SUMMARY:Team Standup
+UID:019@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250214T130000
+DTEND:20250214T140000
+SUMMARY:Retro - Sprint 14
+UID:020@4site-sample
+ORGANIZER;CN=Sarah Johnson:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Sarah Johnson;PARTSTAT=ACCEPTED:mailto:sarah@4sitestudios.com
+ATTENDEE;CN=Mike Chen;PARTSTAT=ACCEPTED:mailto:mike@4sitestudios.com
+ATTENDEE;CN=Lisa Park;PARTSTAT=ACCEPTED:mailto:lisa@4sitestudios.com
+ATTENDEE;CN=David Kim;PARTSTAT=ACCEPTED:mailto:david@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250214T153000
+DTEND:20250214T160000
+SUMMARY:Focus time
+UID:021@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+END:VEVENT
+END:VCALENDAR
