@@ -15,7 +15,8 @@ credentials.json
 token.json
 token.pickle
 
-# Config with sensitive data
+# Config with sensitive data (users create their own from config.example.yaml)
+config.yaml
 config.local.yaml
 
 # IDE
