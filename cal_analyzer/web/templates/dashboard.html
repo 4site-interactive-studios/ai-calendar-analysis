@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ config.company_name }} - Calendar Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface2: #334155;
+            --border: #475569;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --accent: #3b82f6;
+            --green: #22c55e;
+            --blue: #3b82f6;
+            --yellow: #eab308;
+            --purple: #a855f7;
+            --red: #ef4444;
+            --cyan: #06b6d4;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .header h1 span { color: var(--accent); }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-section h2 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--text-dim);
+        }
+
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .upload-option {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .upload-option label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="text"], input[type="date"], input[type="file"] {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 0.6rem 0.75rem;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        input[type="file"]::file-selector-button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.3rem 0.75rem;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+
+        .date-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .date-row .upload-option { flex: 1; }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.7rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn:hover { opacity: 0.85; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-row { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+
+        .status {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .status.error { color: var(--red); }
+
+        .privacy-note {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(59, 130, 246, 0.08);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+        }
+
+        /* Dashboard Grid */
+        .dashboard { display: none; }
+        .dashboard.visible { display: block; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-card .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+
+        .stat-card .sub {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 0.25rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-card h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-dim);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .chart-container.tall { height: 350px; }
+        .chart-container.short { height: 280px; }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dim);
+            font-weight: 500;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .data-table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+        }
+
+        .data-table tr:hover { background: rgba(59, 130, 246, 0.05); }
+
+        .data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge.internal { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+        .badge.client { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
+        .badge.external { background: rgba(234, 179, 8, 0.15); color: var(--yellow); }
+        .badge.solo { background: rgba(148, 163, 184, 0.15); color: var(--text-dim); }
+
+        /* Period Toggle */
+        .period-toggle {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 0.2rem;
+            margin-bottom: 1rem;
+            width: fit-content;
+        }
+
+        .period-btn {
+            background: transparent;
+            color: var(--text-dim);
+            border: none;
+            border-radius: 6px;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .period-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .table-scroll { max-height: 400px; overflow-y: auto; }
+
+        @media (max-width: 900px) {
+            .upload-grid { grid-template-columns: 1fr; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span>{{ config.company_name }}</span> Calendar Analytics</h1>
+        <span class="status" id="headerStatus"></span>
+    </div>
+
+    <div class="container">
+        <!-- Upload / Data Source -->
+        <div class="upload-section">
+            <h2>Data Source</h2>
+            <form id="analyzeForm" enctype="multipart/form-data">
+                <div class="upload-grid">
+                    <div class="upload-option">
+                        <label>Upload .ics File</label>
+                        <input type="file" id="icalFile" name="ical_file" accept=".ics">
+                    </div>
+                    <div class="upload-option">
+                        <label>Or Paste iCal URL</label>
+                        <input type="text" id="icalUrl" name="ical_url"
+                               placeholder="https://calendar.google.com/...basic.ics">
+                    </div>
+                    <div class="upload-option">
+                        <label>&nbsp;</label>
+                        <div style="font-size:0.8rem;color:var(--text-dim)">
+                            Leave both empty to use Google Calendar API
+                            (requires credentials.json setup)
+                        </div>
+                    </div>
+                </div>
+                <div class="date-row">
+                    <div class="upload-option">
+                        <label>Start Date</label>
+                        <input type="date" id="startDate" name="start_date">
+                    </div>
+                    <div class="upload-option">
+                        <label>End Date</label>
+                        <input type="date" id="endDate" name="end_date">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button type="submit" class="btn" id="analyzeBtn">Analyze Calendar</button>
+                    <span class="status" id="formStatus"></span>
+                </div>
+            </form>
+            <div class="privacy-note">
+                Privacy: All data is processed locally in your browser and server memory.
+                No calendar data is stored to disk or sent to third parties.
+            </div>
+        </div>
+
+        <!-- Dashboard (hidden until data loads) -->
+        <div class="dashboard" id="dashboard">
+
+            <!-- Summary Stats -->
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- Period Toggle -->
+            <div class="period-toggle" id="periodToggle">
+                <button class="period-btn active" data-period="month">Monthly</button>
+                <button class="period-btn" data-period="quarter">Quarterly</button>
+                <button class="period-btn" data-period="year">Yearly</button>
+                <button class="period-btn" data-period="week">Weekly</button>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-card full-width">
+                    <h3>Meetings Over Time</h3>
+                    <div class="chart-container tall">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Meeting Types</h3>
+                    <div class="chart-container short">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Duration Distribution</h3>
+                    <div class="chart-container short">
+                        <canvas id="durationChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Day of Week</h3>
+                    <div class="chart-container short">
+                        <canvas id="dayChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Recurring vs One-off</h3>
+                    <div class="chart-container short">
+                        <canvas id="recurringChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Hours by Meeting Type</h3>
+                    <div class="chart-container short">
+                        <canvas id="hoursTypeChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Client Breakdown</h3>
+                    <div class="chart-container short">
+                        <canvas id="clientChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tables -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Top Participants</h3>
+                    <div class="table-scroll">
+                        <table class="data-table" id="participantsTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th class="num">Meetings</th>
+                                    <th class="num">Hours</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Busiest Days</h3>
+                    <div class="table-scroll">
+                        <table class="data-table" id="busiestTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th class="num">Meetings</th>
+                                    <th class="num">Hours</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="chart-card full-width">
+                    <h3 id="periodTableTitle">Monthly Breakdown</h3>
+                    <div class="table-scroll">
+                        <table class="data-table" id="periodTable">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th class="num">Meetings</th>
+                                    <th class="num">Hours</th>
+                                    <th class="num">Internal</th>
+                                    <th class="num">Client</th>
+                                    <th class="num">External</th>
+                                    <th class="num">Solo</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // State
+    let analyticsData = null;
+    let charts = {};
+    let currentPeriod = 'month';
+
+    const COLORS = {
+        internal: '#22c55e',
+        client: '#3b82f6',
+        external: '#eab308',
+        solo: '#94a3b8',
+        accent: '#3b82f6',
+        purple: '#a855f7',
+        cyan: '#06b6d4',
+        red: '#ef4444',
+    };
+
+    // Set default dates
+    const today = new Date();
+    const yearAgo = new Date(today);
+    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+    document.getElementById('startDate').value = yearAgo.toISOString().split('T')[0];
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
+    // Chart.js defaults
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.borderColor = 'rgba(71, 85, 105, 0.3)';
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+    // Form submission
+    document.getElementById('analyzeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('analyzeBtn');
+        const status = document.getElementById('formStatus');
+
+        btn.disabled = true;
+        status.className = 'status';
+        status.textContent = 'Analyzing...';
+
+        const formData = new FormData(e.target);
+
+        try {
+            const resp = await fetch('/api/analyze', { method: 'POST', body: formData });
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                throw new Error(data.error || 'Analysis failed');
+            }
+
+            analyticsData = data;
+            status.textContent = `Loaded ${data.event_count} events (${data.source})`;
+            document.getElementById('headerStatus').textContent =
+                `${data.event_count} events | ${data.date_range.start} to ${data.date_range.end}`;
+
+            renderDashboard(data);
+        } catch (err) {
+            status.className = 'status error';
+            status.textContent = err.message;
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    // Period toggle
+    document.getElementById('periodToggle').addEventListener('click', (e) => {
+        if (!e.target.classList.contains('period-btn')) return;
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentPeriod = e.target.dataset.period;
+        if (analyticsData) {
+            renderTimeline(analyticsData);
+            renderPeriodTable(analyticsData);
+        }
+    });
+
+    function renderDashboard(data) {
+        document.getElementById('dashboard').classList.add('visible');
+        renderStats(data.summary);
+        renderTimeline(data);
+        renderTypeChart(data);
+        renderDurationChart(data);
+        renderDayChart(data);
+        renderRecurringChart(data);
+        renderHoursTypeChart(data);
+        renderClientChart(data);
+        renderParticipantsTable(data);
+        renderBusiestTable(data);
+        renderPeriodTable(data);
+    }
+
+    function renderStats(s) {
+        const grid = document.getElementById('statsGrid');
+        grid.innerHTML = '';
+
+        const cards = [
+            { label: 'Total Meetings', value: s.total_events, sub: `${s.total_hours}h total` },
+            { label: 'Avg Duration', value: `${s.avg_duration_minutes}m`, sub: `${s.avg_attendees} avg attendees` },
+            { label: 'Per Work Day', value: s.meetings_per_working_day, sub: 'meetings on average' },
+            { label: 'Internal', value: s.internal_count, sub: `${s.internal_hours}h`, color: COLORS.internal },
+            { label: 'Client', value: s.client_count, sub: `${s.client_hours}h`, color: COLORS.client },
+            { label: 'External', value: s.external_count, sub: `${s.external_hours}h`, color: COLORS.external },
+        ];
+
+        cards.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'stat-card';
+            div.innerHTML = `
+                <div class="label">${c.label}</div>
+                <div class="value" ${c.color ? `style="color:${c.color}"` : ''}>${c.value}</div>
+                <div class="sub">${c.sub}</div>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    function destroyChart(name) {
+        if (charts[name]) { charts[name].destroy(); charts[name] = null; }
+    }
+
+    function renderTimeline(data) {
+        destroyChart('timeline');
+        const periodKey = `by_${currentPeriod}`;
+        const periodData = data[periodKey] || {};
+        const labels = Object.keys(periodData);
+        const counts = labels.map(k => periodData[k].count);
+        const hours = labels.map(k => periodData[k].total_hours);
+        const internal = labels.map(k => periodData[k].type_breakdown.internal || 0);
+        const client = labels.map(k => periodData[k].type_breakdown.client || 0);
+        const external = labels.map(k => periodData[k].type_breakdown.external || 0);
+
+        charts.timeline = new Chart(document.getElementById('timelineChart'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Internal', data: internal, backgroundColor: COLORS.internal, stack: 'stack' },
+                    { label: 'Client', data: client, backgroundColor: COLORS.client, stack: 'stack' },
+                    { label: 'External', data: external, backgroundColor: COLORS.external, stack: 'stack' },
+                    { label: 'Hours', data: hours, type: 'line', borderColor: COLORS.purple,
+                      backgroundColor: 'transparent', yAxisID: 'hours', pointRadius: 3, tension: 0.3 },
+                ],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { title: { display: true, text: 'Meetings' }, stacked: true },
+                    hours: { position: 'right', title: { display: true, text: 'Hours' },
+                             grid: { display: false } },
+                },
+            },
+        });
+    }
+
+    function renderTypeChart(data) {
+        destroyChart('type');
+        const types = data.by_type;
+        const labels = Object.keys(types);
+        const values = labels.map(k => types[k].count);
+        const colors = labels.map(k => COLORS[k] || COLORS.accent);
+
+        charts.type = new Chart(document.getElementById('typeChart'), {
+            type: 'doughnut',
+            data: { labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)), datasets: [{ data: values, backgroundColor: colors }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+            },
+        });
+    }
+
+    function renderDurationChart(data) {
+        destroyChart('duration');
+        const dist = data.duration_distribution;
+        const order = ['0-15 min', '16-30 min', '31-60 min', '61-90 min', '90+ min'];
+        const labels = order.filter(k => k in dist);
+        const values = labels.map(k => dist[k]);
+
+        charts.duration = new Chart(document.getElementById('durationChart'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{ data: values, backgroundColor: COLORS.purple, borderRadius: 6 }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { grid: { display: false } }, y: { title: { display: true, text: 'Count' } } },
+            },
+        });
+    }
+
+    function renderDayChart(data) {
+        destroyChart('day');
+        const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const days = data.by_day_of_week;
+        const labels = dayOrder.filter(d => d in days);
+        const values = labels.map(d => days[d].count);
+        const hours = labels.map(d => days[d].total_hours);
+
+        charts.day = new Chart(document.getElementById('dayChart'), {
+            type: 'bar',
+            data: {
+                labels: labels.map(d => d.slice(0, 3)),
+                datasets: [
+                    { label: 'Meetings', data: values, backgroundColor: COLORS.cyan, borderRadius: 6 },
+                    { label: 'Hours', data: hours, type: 'line', borderColor: COLORS.red,
+                      backgroundColor: 'transparent', pointRadius: 4, tension: 0.3 },
+                ],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: { x: { grid: { display: false } } },
+            },
+        });
+    }
+
+    function renderRecurringChart(data) {
+        destroyChart('recurring');
+        const r = data.recurring_vs_oneoff;
+        charts.recurring = new Chart(document.getElementById('recurringChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Recurring', 'One-off'],
+                datasets: [{
+                    data: [r.recurring?.count || 0, r['one-off']?.count || 0],
+                    backgroundColor: [COLORS.cyan, COLORS.purple],
+                }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+            },
+        });
+    }
+
+    function renderHoursTypeChart(data) {
+        destroyChart('hoursType');
+        const types = data.by_type;
+        const labels = Object.keys(types).map(l => l.charAt(0).toUpperCase() + l.slice(1));
+        const hours = Object.values(types).map(t => t.total_hours);
+        const colors = Object.keys(types).map(k => COLORS[k] || COLORS.accent);
+
+        charts.hoursType = new Chart(document.getElementById('hoursTypeChart'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{ data: hours, backgroundColor: colors, borderRadius: 6 }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: { x: { title: { display: true, text: 'Hours' } }, y: { grid: { display: false } } },
+            },
+        });
+    }
+
+    function renderClientChart(data) {
+        destroyChart('client');
+        const clients = data.client_breakdown;
+        const entries = Object.entries(clients).sort((a, b) => b[1].total_hours - a[1].total_hours);
+        if (entries.length === 0) {
+            document.getElementById('clientChart').parentElement.parentElement.querySelector('h3').textContent =
+                'Client Breakdown (configure client_domains in config.yaml)';
+            return;
+        }
+        const labels = entries.map(e => e[0]);
+        const hours = entries.map(e => e[1].total_hours);
+        const palette = ['#3b82f6', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444', '#10b981', '#ec4899'];
+
+        charts.client = new Chart(document.getElementById('clientChart'), {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{ data: hours, backgroundColor: palette.slice(0, labels.length) }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+            },
+        });
+    }
+
+    function renderParticipantsTable(data) {
+        const tbody = document.querySelector('#participantsTable tbody');
+        tbody.innerHTML = '';
+        (data.top_participants || []).forEach((p, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="num">${i + 1}</td>
+                <td>${escHtml(p.name || p.email)}</td>
+                <td class="num">${p.count}</td>
+                <td class="num">${p.hours}h</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderBusiestTable(data) {
+        const tbody = document.querySelector('#busiestTable tbody');
+        tbody.innerHTML = '';
+        (data.busiest_days || []).forEach(d => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${d.date}</td>
+                <td class="num">${d.meetings}</td>
+                <td class="num">${d.hours}h</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderPeriodTable(data) {
+        const titles = { month: 'Monthly', quarter: 'Quarterly', year: 'Yearly', week: 'Weekly' };
+        document.getElementById('periodTableTitle').textContent = `${titles[currentPeriod]} Breakdown`;
+
+        const periodData = data[`by_${currentPeriod}`] || {};
+        const tbody = document.querySelector('#periodTable tbody');
+        tbody.innerHTML = '';
+
+        Object.entries(periodData).forEach(([key, b]) => {
+            const tb = b.type_breakdown || {};
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${key}</strong></td>
+                <td class="num">${b.count}</td>
+                <td class="num">${b.total_hours}h</td>
+                <td class="num">${tb.internal || 0}</td>
+                <td class="num">${tb.client || 0}</td>
+                <td class="num">${tb.external || 0}</td>
+                <td class="num">${tb.solo || 0}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function escHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    </script>
+</body>
+</html>
