@@ -327,11 +327,11 @@
                 </div>
                 <div class="date-row">
                     <div class="upload-option">
-                        <label>Start Date</label>
+                        <label>Start Date <span style="font-weight:normal;text-transform:none">(blank = all time)</span></label>
                         <input type="date" id="startDate" name="start_date">
                     </div>
                     <div class="upload-option">
-                        <label>End Date</label>
+                        <label>End Date <span style="font-weight:normal;text-transform:none">(blank = present)</span></label>
                         <input type="date" id="endDate" name="end_date">
                     </div>
                 </div>
@@ -487,12 +487,25 @@
         red: '#ef4444',
     };
 
-    // Set default dates
-    const today = new Date();
-    const yearAgo = new Date(today);
-    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-    document.getElementById('startDate').value = yearAgo.toISOString().split('T')[0];
-    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    // Leave date fields blank by default so all events are returned
+
+    // Cookie helpers
+    function setCookie(name, value, days) {
+        const d = new Date();
+        d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+    }
+
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : '';
+    }
+
+    // Restore iCal URL from cookie
+    const savedUrl = getCookie('ical_url');
+    if (savedUrl) {
+        document.getElementById('icalUrl').value = savedUrl;
+    }
 
     // Chart.js defaults
     Chart.defaults.color = '#94a3b8';
@@ -521,8 +534,16 @@
 
             analyticsData = data;
             status.textContent = `Loaded ${data.event_count} events (${data.source})`;
+            const rangeStart = data.date_range.start === 'all' ? 'all time' : data.date_range.start;
+            const rangeEnd = data.date_range.end === 'present' ? 'present' : data.date_range.end;
             document.getElementById('headerStatus').textContent =
-                `${data.event_count} events | ${data.date_range.start} to ${data.date_range.end}`;
+                `${data.event_count} events | ${rangeStart} to ${rangeEnd}`;
+
+            // Persist iCal URL in cookie (90 days) so it survives refresh
+            const icalUrlValue = document.getElementById('icalUrl').value.trim();
+            if (icalUrlValue) {
+                setCookie('ical_url', icalUrlValue, 90);
+            }
 
             renderDashboard(data);
         } catch (err) {

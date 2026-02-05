@@ -43,8 +43,8 @@ def create_app(config_path: str = "config.yaml"):
         start_str = request.form.get("start_date", "")
         end_str = request.form.get("end_date", "")
 
-        start_date = _parse_date(start_str) if start_str else now - relativedelta(years=1)
-        end_date = _parse_date(end_str) if end_str else now
+        start_date = _parse_date(start_str) if start_str else None
+        end_date = _parse_date(end_str) if end_str else None
 
         # Determine source
         ical_url = request.form.get("ical_url", "").strip()
@@ -102,8 +102,8 @@ def create_app(config_path: str = "config.yaml"):
             "source": source_label,
             "event_count": len(events),
             "date_range": {
-                "start": start_date.strftime("%Y-%m-%d"),
-                "end": end_date.strftime("%Y-%m-%d"),
+                "start": start_date.strftime("%Y-%m-%d") if start_date else "all",
+                "end": end_date.strftime("%Y-%m-%d") if end_date else "present",
             },
             "summary": stats,
             "by_month": _serialize_buckets(results["by_month"]),
