@@ -536,6 +536,8 @@
                 <div class="big-spinner"></div>
                 <div class="loading-text" id="loadingText">Loading calendar events...</div>
                 <div class="loading-sub" id="loadingSub">Fetching and parsing your iCal data</div>
+                <button class="btn btn-sm" id="loadingCancel" style="display:none;background:var(--surface2);margin-top:0.5rem">Cancel</button>
+                <div style="font-size:0.65rem;color:var(--text-dim);opacity:0.5;margin-top:0.5rem" id="loadingVersion">v1.6.0</div>
             </div>
         </div>
 
@@ -727,14 +729,20 @@
     });
 
     // Loading overlay helpers
-    function showLoading(text, sub) {
+    let loadAbortController = null;
+    function showLoading(text, sub, cancellable) {
         document.getElementById('loadingText').textContent = text || 'Loading calendar events...';
         document.getElementById('loadingSub').textContent = sub || 'Fetching and parsing your iCal data';
+        document.getElementById('loadingCancel').style.display = cancellable ? '' : 'none';
         document.getElementById('loadingOverlay').style.display = 'flex';
     }
     function hideLoading() {
         document.getElementById('loadingOverlay').style.display = 'none';
     }
+    document.getElementById('loadingCancel').addEventListener('click', () => {
+        if (loadAbortController) loadAbortController.abort();
+        hideLoading();
+    });
 
     // Date helpers
     function fmtDate(d) {
@@ -792,6 +800,7 @@
     Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
     // Form submission -- loads ALL events
+    let isAutoSubmit = false;
     document.getElementById('analyzeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('analyzeBtn');
@@ -800,12 +809,13 @@
         btn.disabled = true;
         status.className = 'status';
         status.textContent = '';
-        showLoading('Loading calendar events...', 'Fetching and parsing your iCal data');
+        loadAbortController = new AbortController();
+        showLoading('Loading calendar events...', 'Fetching and parsing your iCal data', isAutoSubmit);
 
         const formData = new FormData(e.target);
 
         try {
-            const resp = await fetch('/api/analyze', { method: 'POST', body: formData });
+            const resp = await fetch('/api/analyze', { method: 'POST', body: formData, signal: loadAbortController.signal });
             const data = await resp.json();
 
             if (!resp.ok) {
@@ -838,10 +848,16 @@
 
             renderDashboard(data);
         } catch (err) {
-            status.className = 'status error';
-            status.textContent = err.message;
+            if (err.name === 'AbortError') {
+                status.textContent = 'Cancelled';
+            } else {
+                status.className = 'status error';
+                status.textContent = err.message;
+            }
         } finally {
             btn.disabled = false;
+            isAutoSubmit = false;
+            loadAbortController = null;
             hideLoading();
         }
     });
@@ -1240,6 +1256,7 @@
 
     // Auto-submit if iCal URL was restored from cookie
     if (document.getElementById('icalUrl').value.trim()) {
+        isAutoSubmit = true;
         document.getElementById('analyzeForm').requestSubmit();
     }
     </script>
