@@ -34,7 +34,7 @@ from cal_analyzer.reporter import (
     print_day_of_week,
     print_duration_distribution,
     print_top_participants,
-    print_client_breakdown,
+    print_organization_breakdown,
     print_busiest_days,
 )
 
@@ -137,9 +137,9 @@ def participants(ctx, n):
 
 @cli.command()
 @click.pass_context
-def clients(ctx):
-    """Show client meeting breakdown."""
-    print_client_breakdown(ctx.obj["results"])
+def orgs(ctx):
+    """Show external organization meeting breakdown."""
+    print_organization_breakdown(ctx.obj["results"])
 
 
 @cli.command()

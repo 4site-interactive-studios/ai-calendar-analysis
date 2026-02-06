@@ -405,9 +405,9 @@
                 </div>
 
                 <div class="chart-card">
-                    <h3>Client Breakdown</h3>
+                    <h3>External Organizations</h3>
                     <div class="chart-container short">
-                        <canvas id="clientChart"></canvas>
+                        <canvas id="orgChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -457,7 +457,6 @@
                                     <th class="num">Meetings</th>
                                     <th class="num">Hours</th>
                                     <th class="num">Internal</th>
-                                    <th class="num">Client</th>
                                     <th class="num">External</th>
                                     <th class="num">Solo</th>
                                 </tr>
@@ -478,7 +477,6 @@
 
     const COLORS = {
         internal: '#22c55e',
-        client: '#3b82f6',
         external: '#eab308',
         solo: '#94a3b8',
         accent: '#3b82f6',
@@ -575,7 +573,7 @@
         renderDayChart(data);
         renderRecurringChart(data);
         renderHoursTypeChart(data);
-        renderClientChart(data);
+        renderOrgChart(data);
         renderParticipantsTable(data);
         renderBusiestTable(data);
         renderPeriodTable(data);
@@ -590,7 +588,6 @@
             { label: 'Avg Duration', value: `${s.avg_duration_minutes}m`, sub: `${s.avg_attendees} avg attendees` },
             { label: 'Per Work Day', value: s.meetings_per_working_day, sub: 'meetings on average' },
             { label: 'Internal', value: s.internal_count, sub: `${s.internal_hours}h`, color: COLORS.internal },
-            { label: 'Client', value: s.client_count, sub: `${s.client_hours}h`, color: COLORS.client },
             { label: 'External', value: s.external_count, sub: `${s.external_hours}h`, color: COLORS.external },
         ];
 
@@ -618,7 +615,6 @@
         const counts = labels.map(k => periodData[k].count);
         const hours = labels.map(k => periodData[k].total_hours);
         const internal = labels.map(k => periodData[k].type_breakdown.internal || 0);
-        const client = labels.map(k => periodData[k].type_breakdown.client || 0);
         const external = labels.map(k => periodData[k].type_breakdown.external || 0);
 
         charts.timeline = new Chart(document.getElementById('timelineChart'), {
@@ -627,7 +623,6 @@
                 labels,
                 datasets: [
                     { label: 'Internal', data: internal, backgroundColor: COLORS.internal, stack: 'stack' },
-                    { label: 'Client', data: client, backgroundColor: COLORS.client, stack: 'stack' },
                     { label: 'External', data: external, backgroundColor: COLORS.external, stack: 'stack' },
                     { label: 'Hours', data: hours, type: 'line', borderColor: COLORS.purple,
                       backgroundColor: 'transparent', yAxisID: 'hours', pointRadius: 3, tension: 0.3 },
@@ -751,20 +746,20 @@
         });
     }
 
-    function renderClientChart(data) {
-        destroyChart('client');
-        const clients = data.client_breakdown;
-        const entries = Object.entries(clients).sort((a, b) => b[1].total_hours - a[1].total_hours);
+    function renderOrgChart(data) {
+        destroyChart('org');
+        const orgs = data.organization_breakdown;
+        const entries = Object.entries(orgs).sort((a, b) => b[1].total_hours - a[1].total_hours);
         if (entries.length === 0) {
-            document.getElementById('clientChart').parentElement.parentElement.querySelector('h3').textContent =
-                'Client Breakdown (configure client_domains in config.yaml)';
+            document.getElementById('orgChart').parentElement.parentElement.querySelector('h3').textContent =
+                'External Organizations (none found)';
             return;
         }
         const labels = entries.map(e => e[0]);
         const hours = entries.map(e => e[1].total_hours);
-        const palette = ['#3b82f6', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444', '#10b981', '#ec4899'];
+        const palette = ['#eab308', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444', '#10b981', '#ec4899'];
 
-        charts.client = new Chart(document.getElementById('clientChart'), {
+        charts.org = new Chart(document.getElementById('orgChart'), {
             type: 'doughnut',
             data: {
                 labels,
@@ -822,7 +817,6 @@
                 <td class="num">${b.count}</td>
                 <td class="num">${b.total_hours}h</td>
                 <td class="num">${tb.internal || 0}</td>
-                <td class="num">${tb.client || 0}</td>
                 <td class="num">${tb.external || 0}</td>
                 <td class="num">${tb.solo || 0}</td>
             `;

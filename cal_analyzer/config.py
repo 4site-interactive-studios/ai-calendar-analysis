@@ -5,18 +5,9 @@ from pathlib import Path
 import yaml
 
 DEFAULT_CONFIG = {
-    "company_domains": ["4sitestudios.com"],
+    "company_domains": ["4sitestudios.com", "stratovation.digital", "brennaholmes.com"],
     "company_name": "4Site Interactive Studios",
-    "client_domains": {},
-    "client_title_keywords": [
-        "client", "kickoff", "stakeholder", "review",
-        "demo", "presentation", "proposal",
-    ],
-    "internal_title_keywords": [
-        "standup", "stand-up", "1:1", "one-on-one", "team sync",
-        "sprint", "retro", "planning", "all hands", "all-hands",
-        "lunch", "happy hour",
-    ],
+    "organization_names": {},
     "calendar_id": "primary",
     "credentials_file": "credentials.json",
     "token_file": "token.json",

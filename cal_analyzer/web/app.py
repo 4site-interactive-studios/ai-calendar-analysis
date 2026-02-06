@@ -113,7 +113,7 @@ def create_app(config_path: str = "config.yaml"):
             "by_type": _serialize_buckets(results["by_type"]),
             "by_day_of_week": _serialize_buckets(results["by_day_of_week"]),
             "duration_distribution": results["duration_distribution"],
-            "client_breakdown": _serialize_buckets(results["client_breakdown"]),
+            "organization_breakdown": _serialize_buckets(results["organization_breakdown"]),
             "recurring_vs_oneoff": _serialize_buckets(results["recurring_vs_oneoff"]),
             "busiest_days": results["busiest_days"],
             "top_participants": [

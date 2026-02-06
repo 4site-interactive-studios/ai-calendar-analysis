@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Optional
 
-from .classifier import MeetingType, classify_meeting, identify_client_for_event
+from .classifier import MeetingType, classify_meeting, get_external_orgs
 
 
 def _quarter(dt: datetime) -> str:
@@ -49,7 +49,7 @@ def analyze_events(events: list[dict], config: dict) -> dict:
         "participants": defaultdict(lambda: {
             "count": 0, "total_minutes": 0.0, "meetings": []
         }),
-        "client_breakdown": defaultdict(lambda: _empty_bucket()),
+        "organization_breakdown": defaultdict(lambda: _empty_bucket()),
         "recurring_vs_oneoff": {"recurring": _empty_bucket(), "one-off": _empty_bucket()},
         "duration_distribution": defaultdict(int),
         "busiest_days": [],
@@ -60,12 +60,12 @@ def analyze_events(events: list[dict], config: dict) -> dict:
 
     for event in events:
         meeting_type = classify_meeting(event, config)
-        client_name = identify_client_for_event(event, config)
+        ext_orgs = get_external_orgs(event, config) if meeting_type == MeetingType.EXTERNAL else []
         duration = event["duration_minutes"]
         start = event["start"]
 
         # Enrich event
-        enriched = {**event, "meeting_type": meeting_type.value, "client_name": client_name}
+        enriched = {**event, "meeting_type": meeting_type.value, "organizations": ext_orgs}
         results["events"].append(enriched)
 
         results["total_events"] += 1
@@ -104,9 +104,9 @@ def analyze_events(events: list[dict], config: dict) -> dict:
             p["name"] = name
             p["email"] = email
 
-        # Client breakdown
-        if client_name:
-            _add_to_bucket(results["client_breakdown"][client_name], duration, meeting_type)
+        # Organization breakdown (external meetings)
+        for org in ext_orgs:
+            _add_to_bucket(results["organization_breakdown"][org], duration, meeting_type)
 
         # Recurring vs one-off
         r_key = "recurring" if event.get("recurring") else "one-off"
@@ -145,7 +145,7 @@ def analyze_events(events: list[dict], config: dict) -> dict:
     results["by_day_of_week"] = dict(results["by_day_of_week"])
     results["by_hour_of_day"] = dict(results["by_hour_of_day"])
     results["participants"] = dict(results["participants"])
-    results["client_breakdown"] = dict(results["client_breakdown"])
+    results["organization_breakdown"] = dict(results["organization_breakdown"])
     results["duration_distribution"] = dict(results["duration_distribution"])
 
     return results
@@ -202,12 +202,10 @@ def get_summary_stats(results: dict) -> dict:
         "avg_attendees": round(avg_attendees, 1),
         "meetings_per_working_day": round(meetings_per_day, 1),
         "internal_count": type_counts.get("internal", {}).get("count", 0),
-        "client_count": type_counts.get("client", {}).get("count", 0),
         "external_count": type_counts.get("external", {}).get("count", 0),
         "solo_count": type_counts.get("solo", {}).get("count", 0),
         "recurring_count": results["recurring_vs_oneoff"]["recurring"]["count"],
         "oneoff_count": results["recurring_vs_oneoff"]["one-off"]["count"],
         "internal_hours": type_counts.get("internal", {}).get("total_hours", 0),
-        "client_hours": type_counts.get("client", {}).get("total_hours", 0),
         "external_hours": type_counts.get("external", {}).get("total_hours", 0),
     }

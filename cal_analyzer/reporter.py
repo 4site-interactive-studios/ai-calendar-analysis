@@ -41,7 +41,6 @@ def print_summary(results: dict):
         f"[bold]Meetings / Work Day:[/bold]    {stats['meetings_per_working_day']}",
         "",
         f"[green]Internal:[/green]  {stats['internal_count']} meetings ({stats['internal_hours']}h)",
-        f"[blue]Client:[/blue]    {stats['client_count']} meetings ({stats['client_hours']}h)",
         f"[yellow]External:[/yellow]  {stats['external_count']} meetings ({stats['external_hours']}h)",
         f"[dim]Solo:[/dim]      {stats['solo_count']} meetings",
         "",
@@ -75,7 +74,6 @@ def print_time_breakdown(results: dict, period: str = "month"):
     table.add_column("Meetings", justify="right")
     table.add_column("Hours", justify="right")
     table.add_column("Internal", justify="right", style="green")
-    table.add_column("Client", justify="right", style="blue")
     table.add_column("External", justify="right", style="yellow")
     table.add_column("Solo", justify="right", style="dim")
 
@@ -86,7 +84,6 @@ def print_time_breakdown(results: dict, period: str = "month"):
             str(bucket["count"]),
             f"{bucket['total_hours']:.1f}",
             str(tb.get("internal", 0)),
-            str(tb.get("client", 0)),
             str(tb.get("external", 0)),
             str(tb.get("solo", 0)),
         )
@@ -108,7 +105,6 @@ def print_meeting_types(results: dict):
 
     type_styles = {
         "internal": "green",
-        "client": "blue",
         "external": "yellow",
         "solo": "dim",
     }
@@ -203,21 +199,21 @@ def print_top_participants(results: dict, n: int = 20):
     console.print()
 
 
-def print_client_breakdown(results: dict):
-    """Print time spent with each client."""
-    data = results.get("client_breakdown", {})
+def print_organization_breakdown(results: dict):
+    """Print time spent with each external organization."""
+    data = results.get("organization_breakdown", {})
 
     if not data:
-        console.print("[dim]No client meetings identified. Configure client_domains in config.yaml.[/dim]")
+        console.print("[dim]No external organization meetings found.[/dim]")
         return
 
-    table = Table(title="Client Meeting Breakdown")
-    table.add_column("Client", style="bold blue")
+    table = Table(title="External Organization Breakdown")
+    table.add_column("Organization", style="bold yellow")
     table.add_column("Meetings", justify="right")
     table.add_column("Hours", justify="right")
 
-    for client, bucket in sorted(data.items(), key=lambda x: x[1]["total_hours"], reverse=True):
-        table.add_row(client, str(bucket["count"]), f"{bucket['total_hours']:.1f}")
+    for org, bucket in sorted(data.items(), key=lambda x: x[1]["total_hours"], reverse=True):
+        table.add_row(org, str(bucket["count"]), f"{bucket['total_hours']:.1f}")
 
     console.print(table)
     console.print()
@@ -254,7 +250,7 @@ def print_full_report(results: dict):
     print_day_of_week(results)
     print_duration_distribution(results)
     print_top_participants(results)
-    print_client_breakdown(results)
+    print_organization_breakdown(results)
     print_busiest_days(results)
 
 
@@ -276,7 +272,7 @@ def export_csv(results: dict, output_path: str):
     with open(path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([
-            "Period", "Meetings", "Hours", "Internal", "Client", "External", "Solo"
+            "Period", "Meetings", "Hours", "Internal", "External", "Solo"
         ])
         for period_name, bucket in results.get("by_month", {}).items():
             tb = bucket.get("type_breakdown", {})
@@ -285,7 +281,6 @@ def export_csv(results: dict, output_path: str):
                 bucket["count"],
                 f"{bucket['total_hours']:.1f}",
                 tb.get("internal", 0),
-                tb.get("client", 0),
                 tb.get("external", 0),
                 tb.get("solo", 0),
             ])
