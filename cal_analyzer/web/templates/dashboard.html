@@ -491,7 +491,7 @@
         <h1><span>{{ config.company_name }}</span> Calendar Analytics</h1>
         <div style="display:flex;align-items:center;gap:1rem">
             <span class="status" id="headerStatus"></span>
-            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.4.0</span>
+            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.5.0</span>
         </div>
     </div>
 
@@ -1235,6 +1235,11 @@
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    }
+
+    // Auto-submit if iCal URL was restored from cookie
+    if (document.getElementById('icalUrl').value.trim()) {
+        document.getElementById('analyzeForm').requestSubmit();
     }
     </script>
 </body>
