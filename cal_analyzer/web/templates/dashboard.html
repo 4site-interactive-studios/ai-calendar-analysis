@@ -68,24 +68,127 @@
             color: var(--text-dim);
         }
 
-        .upload-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 1rem;
+        .url-row {
+            display: flex;
+            gap: 0.75rem;
             align-items: end;
         }
 
-        .upload-option {
+        .url-row .url-input-wrap {
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
         }
 
-        .upload-option label {
+        .url-row .url-input-wrap label {
             font-size: 0.8rem;
             color: var(--text-dim);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+        }
+
+        .url-row .btn { margin-top: 0; white-space: nowrap; }
+
+        .alt-source {
+            margin-top: 0.75rem;
+        }
+
+        .alt-source-toggle {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+            text-underline-offset: 3px;
+        }
+
+        .alt-source-toggle:hover { color: var(--text); }
+
+        .alt-source-content {
+            display: none;
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: var(--surface2);
+            border-radius: 8px;
+        }
+
+        .alt-source-content.visible { display: block; }
+
+        .alt-source-content label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: block;
+            margin-bottom: 0.35rem;
+        }
+
+        .alt-source-content .alt-hint {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 0.35rem;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(148, 163, 184, 0.25);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 0.4rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem 2.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .loading-box .big-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(148, 163, 184, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-box .loading-text {
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+
+        .loading-box .loading-sub {
+            font-size: 0.8rem;
+            color: var(--text-dim);
         }
 
         input[type="text"], input[type="date"], input[type="file"] {
@@ -394,32 +497,42 @@
         <div class="upload-section">
             <h2>Data Source</h2>
             <form id="analyzeForm" enctype="multipart/form-data">
-                <div class="upload-grid">
-                    <div class="upload-option">
-                        <label>Upload .ics File</label>
-                        <input type="file" id="icalFile" name="ical_file" accept=".ics">
-                    </div>
-                    <div class="upload-option">
-                        <label>Or Paste iCal URL</label>
+                <div class="url-row">
+                    <div class="url-input-wrap">
+                        <label>iCal URL</label>
                         <input type="text" id="icalUrl" name="ical_url"
                                placeholder="https://calendar.google.com/...basic.ics">
                     </div>
-                    <div class="upload-option">
-                        <label>&nbsp;</label>
-                        <div style="font-size:0.8rem;color:var(--text-dim)">
-                            Leave both empty to use Google Calendar API
-                            (requires credentials.json setup)
+                    <button type="submit" class="btn" id="analyzeBtn">Load Calendar</button>
+                </div>
+                <div class="alt-source">
+                    <button type="button" class="alt-source-toggle" id="altSourceToggle">
+                        Or upload an .ics file / use Google Calendar API
+                    </button>
+                    <div class="alt-source-content" id="altSourceContent">
+                        <label>Upload .ics File</label>
+                        <input type="file" id="icalFile" name="ical_file" accept=".ics">
+                        <div class="alt-hint">
+                            Leave both empty to use Google Calendar API (requires credentials.json setup)
                         </div>
                     </div>
                 </div>
                 <div class="btn-row">
-                    <button type="submit" class="btn" id="analyzeBtn">Load Calendar</button>
                     <span class="status" id="formStatus"></span>
                 </div>
             </form>
             <div class="privacy-note">
                 Privacy: All data is processed locally in your browser and server memory.
                 No calendar data is stored to disk or sent to third parties.
+            </div>
+        </div>
+
+        <!-- Loading overlay (hidden by default) -->
+        <div class="loading-overlay" id="loadingOverlay" style="display:none">
+            <div class="loading-box">
+                <div class="big-spinner"></div>
+                <div class="loading-text" id="loadingText">Loading calendar events...</div>
+                <div class="loading-sub" id="loadingSub">Fetching and parsing your iCal data</div>
             </div>
         </div>
 
@@ -603,6 +716,21 @@
         document.getElementById('icalUrl').value = savedUrl;
     }
 
+    // Alt source toggle
+    document.getElementById('altSourceToggle').addEventListener('click', () => {
+        document.getElementById('altSourceContent').classList.toggle('visible');
+    });
+
+    // Loading overlay helpers
+    function showLoading(text, sub) {
+        document.getElementById('loadingText').textContent = text || 'Loading calendar events...';
+        document.getElementById('loadingSub').textContent = sub || 'Fetching and parsing your iCal data';
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
     // Date helpers
     function fmtDate(d) {
         const y = d.getFullYear();
@@ -666,7 +794,8 @@
 
         btn.disabled = true;
         status.className = 'status';
-        status.textContent = 'Loading all events...';
+        status.textContent = '';
+        showLoading('Loading calendar events...', 'Fetching and parsing your iCal data');
 
         const formData = new FormData(e.target);
 
@@ -708,6 +837,7 @@
             status.textContent = err.message;
         } finally {
             btn.disabled = false;
+            hideLoading();
         }
     });
 
@@ -746,10 +876,8 @@
     });
 
     async function reloadAll() {
-        // Re-fetch all events analysis (no filter)
-        const formData = new FormData(document.getElementById('analyzeForm'));
         const status = document.getElementById('filterInfo');
-        status.textContent = 'Loading...';
+        status.innerHTML = '<span class="spinner"></span> Analyzing all events...';
 
         try {
             const resp = await fetch('/api/filter', {
@@ -773,7 +901,7 @@
 
     async function applyFilter(startDate, endDate) {
         const status = document.getElementById('filterInfo');
-        status.textContent = 'Filtering...';
+        status.innerHTML = '<span class="spinner"></span> Filtering and analyzing...';
 
         try {
             const resp = await fetch('/api/filter', {
