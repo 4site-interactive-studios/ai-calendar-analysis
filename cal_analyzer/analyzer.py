@@ -47,6 +47,8 @@ def analyze_events(events: list[dict], config: dict) -> dict:
         "total_hours": 0.0,
         "hold_events": 0,
         "hold_hours": 0.0,
+        "ooo_events": 0,
+        "ooo_hours": 0.0,
         "by_month": defaultdict(lambda: _empty_bucket()),
         "by_quarter": defaultdict(lambda: _empty_bucket()),
         "by_year": defaultdict(lambda: _empty_bucket()),
@@ -82,10 +84,14 @@ def analyze_events(events: list[dict], config: dict) -> dict:
         enriched = {**event, "meeting_type": meeting_type.value, "organizations": ext_orgs}
         results["events"].append(enriched)
 
-        # Track hold events separately -- excluded from all other tallies
+        # Track hold/OOO events separately -- excluded from all other tallies
         if meeting_type == MeetingType.HOLD:
             results["hold_events"] += 1
             results["hold_hours"] += duration / 60
+            continue
+        if meeting_type == MeetingType.OOO:
+            results["ooo_events"] += 1
+            results["ooo_hours"] += duration / 60
             continue
 
         results["total_events"] += 1
@@ -302,13 +308,16 @@ def get_summary_stats(results: dict) -> dict:
             "total_events": 0, "total_hours": 0,
             "hold_events": results.get("hold_events", 0),
             "hold_hours": round(results.get("hold_hours", 0), 1),
+            "ooo_events": results.get("ooo_events", 0),
+            "ooo_hours": round(results.get("ooo_hours", 0), 1),
             "daily_hours": results.get("daily_hours", {}),
         }
 
     type_counts = results["by_type"]
     avg_duration = (results["total_hours"] * 60) / total if total else 0
-    # Only count attendees on non-hold events
-    non_hold = [e for e in results["events"] if e.get("meeting_type") != "hold"]
+    # Only count attendees on non-hold/non-ooo events
+    excluded_types = {"hold", "ooo"}
+    non_hold = [e for e in results["events"] if e.get("meeting_type") not in excluded_types]
     avg_attendees = (
         sum(e["attendee_count"] for e in non_hold) / len(non_hold)
         if non_hold else 0
@@ -337,5 +346,7 @@ def get_summary_stats(results: dict) -> dict:
         "external_hours": type_counts.get("external", {}).get("total_hours", 0),
         "hold_events": results.get("hold_events", 0),
         "hold_hours": round(results.get("hold_hours", 0), 1),
+        "ooo_events": results.get("ooo_events", 0),
+        "ooo_hours": round(results.get("ooo_hours", 0), 1),
         "daily_hours": results.get("daily_hours", {}),
     }

@@ -10,20 +10,25 @@ class MeetingType(str, Enum):
     EXTERNAL = "external"
     SOLO = "solo"
     HOLD = "hold"
+    OOO = "ooo"
 
 
 def classify_meeting(event: dict, config: dict) -> MeetingType:
     """Classify a meeting based on attendee email domains.
 
     - Hold: Title contains "hold" (case-insensitive) -- calendar placeholder
+    - OOO: Title contains "ooo", "out of office", "paid time off", or "pto"
     - Solo: No attendees, or only a single company-domain attendee
     - Internal: All attendees are from company domains (2+)
     - External: Any attendee is from a non-company domain
     """
-    # Check for hold events first
+    # Check for hold / OOO events first
     summary = event.get("summary", "")
-    if "hold" in summary.lower():
+    title_lower = summary.lower()
+    if "hold" in title_lower:
         return MeetingType.HOLD
+    if any(pat in title_lower for pat in ("ooo", "out of office", "paid time off", "pto")):
+        return MeetingType.OOO
 
     company_domains = set(d.lower() for d in config.get("company_domains", []))
     attendees = event.get("attendees", [])

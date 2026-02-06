@@ -699,6 +699,7 @@
         external: '#eab308',
         solo: '#94a3b8',
         hold: '#64748b',
+        ooo: '#64748b',
         accent: '#3b82f6',
         purple: '#a855f7',
         cyan: '#06b6d4',
@@ -1000,9 +1001,12 @@
         const dhInt = dh.internal || {};
         const dhExt = dh.external || {};
 
-        // Hold badge: show if any holds were excluded
-        const holdNote = s.hold_events
-            ? `<span style="font-size:0.7rem;color:var(--text-dim)">(${s.hold_events} holds excluded, ${s.hold_hours}h)</span>`
+        // Exclusion badges: show if any holds/OOO were excluded
+        const excludedParts = [];
+        if (s.hold_events) excludedParts.push(`${s.hold_events} holds (${s.hold_hours}h)`);
+        if (s.ooo_events) excludedParts.push(`${s.ooo_events} OOO (${s.ooo_hours}h)`);
+        const holdNote = excludedParts.length
+            ? `<span style="font-size:0.7rem;color:var(--text-dim)">(excl. ${excludedParts.join(', ')})</span>`
             : '';
 
         const cards = [
