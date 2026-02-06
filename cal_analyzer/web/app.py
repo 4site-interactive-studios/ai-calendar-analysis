@@ -4,6 +4,8 @@ All calendar data is processed in-memory only. Nothing is persisted
 to disk or stored in sessions beyond the current page load.
 """
 
+from __future__ import annotations
+
 import json
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -11,7 +13,13 @@ from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
 from flask import Flask, render_template, request, jsonify
 
-from cal_analyzer.analyzer import analyze_events, get_summary_stats, get_top_participants
+from cal_analyzer.analyzer import (
+    analyze_events,
+    get_summary_stats,
+    get_top_participants,
+    filter_events_by_date,
+    compute_yoy,
+)
 from cal_analyzer.config import load_config
 
 
@@ -21,84 +29,20 @@ def create_app(config_path: str = "config.yaml"):
 
     cfg = load_config(config_path)
 
+    # In-memory event cache (local tool, single user)
+    _cache = {"events": [], "source": ""}
+
     @app.route("/")
     def index():
         return render_template("dashboard.html", config=cfg)
 
-    @app.route("/api/analyze", methods=["POST"])
-    def api_analyze():
-        """Analyze calendar data from an uploaded .ics file or iCal URL.
-
-        Accepts multipart form with either:
-          - ical_file: uploaded .ics file
-          - ical_url: URL to iCal feed
-
-        Also accepts optional:
-          - start_date: YYYY-MM-DD
-          - end_date: YYYY-MM-DD
-
-        Returns JSON analytics results. No data is stored.
-        """
-        now = datetime.now(timezone.utc)
-        start_str = request.form.get("start_date", "")
-        end_str = request.form.get("end_date", "")
-
-        start_date = _parse_date(start_str) if start_str else None
-        end_date = _parse_date(end_str) if end_str else None
-
-        # Determine source
-        ical_url = request.form.get("ical_url", "").strip()
-        ical_file = request.files.get("ical_file")
-
-        events = None
-        source_label = ""
-
-        if ical_file and ical_file.filename:
-            from icalendar import Calendar
-            from cal_analyzer.ical_import import ical_to_parsed_events
-            cal = Calendar.from_ical(ical_file.read())
-            events = ical_to_parsed_events(cal, start_date, end_date)
-            source_label = f"File: {ical_file.filename}"
-
-        elif ical_url:
-            from cal_analyzer.ical_import import get_events_from_ical_url
-            try:
-                events = get_events_from_ical_url(ical_url, start_date, end_date)
-                source_label = "iCal URL"
-            except Exception as e:
-                return jsonify({"error": f"Failed to fetch iCal URL: {e}"}), 400
-
-        else:
-            # Try Google Calendar API
-            try:
-                from cal_analyzer.auth import get_calendar_service
-                from cal_analyzer.fetcher import get_parsed_events
-                service = get_calendar_service(
-                    credentials_file=cfg.get("credentials_file", "credentials.json"),
-                    token_file=cfg.get("token_file", "token.json"),
-                )
-                events = get_parsed_events(service, cfg.get("calendar_id", "primary"),
-                                           start_date, end_date)
-                source_label = "Google Calendar API"
-            except Exception as e:
-                return jsonify({
-                    "error": (
-                        "No data source provided and Google Calendar API not configured. "
-                        "Upload an .ics file or paste an iCal URL."
-                    ),
-                    "detail": str(e),
-                }), 400
-
-        if events is None:
-            return jsonify({"error": "No events loaded"}), 400
-
-        # Run analytics
+    def _build_response(events, source_label, start_date=None, end_date=None):
+        """Run analytics and build JSON response."""
         results = analyze_events(events, cfg)
         stats = get_summary_stats(results)
         top_people = get_top_participants(results, 25)
 
-        # Build response (aggregate only, no raw PII)
-        response = {
+        return {
             "source": source_label,
             "event_count": len(events),
             "date_range": {
@@ -126,6 +70,123 @@ def create_app(config_path: str = "config.yaml"):
                 for p in top_people
             ],
         }
+
+    @app.route("/api/analyze", methods=["POST"])
+    def api_analyze():
+        """Load ALL events from source (no date filtering) and cache them.
+
+        Returns analysis of the full dataset.
+        """
+        ical_url = request.form.get("ical_url", "").strip()
+        ical_file = request.files.get("ical_file")
+
+        events = None
+        source_label = ""
+
+        if ical_file and ical_file.filename:
+            from icalendar import Calendar
+            from cal_analyzer.ical_import import ical_to_parsed_events
+            cal = Calendar.from_ical(ical_file.read())
+            events = ical_to_parsed_events(cal, None, None)
+            source_label = f"File: {ical_file.filename}"
+
+        elif ical_url:
+            from cal_analyzer.ical_import import get_events_from_ical_url
+            try:
+                events = get_events_from_ical_url(ical_url, None, None)
+                source_label = "iCal URL"
+            except Exception as e:
+                return jsonify({"error": f"Failed to fetch iCal URL: {e}"}), 400
+
+        else:
+            try:
+                from cal_analyzer.auth import get_calendar_service
+                from cal_analyzer.fetcher import get_parsed_events
+                service = get_calendar_service(
+                    credentials_file=cfg.get("credentials_file", "credentials.json"),
+                    token_file=cfg.get("token_file", "token.json"),
+                )
+                events = get_parsed_events(service, cfg.get("calendar_id", "primary"),
+                                           None, None)
+                source_label = "Google Calendar API"
+            except Exception as e:
+                return jsonify({
+                    "error": (
+                        "No data source provided and Google Calendar API not configured. "
+                        "Upload an .ics file or paste an iCal URL."
+                    ),
+                    "detail": str(e),
+                }), 400
+
+        if events is None or len(events) == 0:
+            return jsonify({"error": "No events loaded"}), 400
+
+        # Cache events for subsequent filter requests
+        _cache["events"] = events
+        _cache["source"] = source_label
+
+        # Find date range of all events
+        dates = [e["start"] for e in events]
+        min_date = min(dates)
+        max_date = max(dates)
+
+        response = _build_response(events, source_label)
+        response["total_event_count"] = len(events)
+        response["data_range"] = {
+            "min_date": min_date.strftime("%Y-%m-%d"),
+            "max_date": max_date.strftime("%Y-%m-%d"),
+        }
+        response["yoy"] = None
+        return jsonify(response)
+
+    @app.route("/api/filter", methods=["POST"])
+    def api_filter():
+        """Re-analyze cached events with a date filter.
+
+        Also computes YoY comparison (same period shifted 1 year back)
+        when a date range is specified.
+        """
+        if not _cache["events"]:
+            return jsonify({"error": "No data loaded. Please load a calendar first."}), 400
+
+        data = request.get_json() or {}
+        start_str = data.get("start_date", "")
+        end_str = data.get("end_date", "")
+
+        start_date = _parse_date(start_str) if start_str else None
+        end_date = _parse_date(end_str) if end_str else None
+
+        # Filter events
+        filtered = filter_events_by_date(_cache["events"], start_date, end_date)
+        if not filtered:
+            return jsonify({"error": "No events in selected date range"}), 400
+
+        response = _build_response(filtered, _cache["source"], start_date, end_date)
+        response["total_event_count"] = len(_cache["events"])
+
+        # Data range of all cached events
+        all_dates = [e["start"] for e in _cache["events"]]
+        response["data_range"] = {
+            "min_date": min(all_dates).strftime("%Y-%m-%d"),
+            "max_date": max(all_dates).strftime("%Y-%m-%d"),
+        }
+
+        # Compute YoY comparison
+        yoy = None
+        if start_date and end_date:
+            prev_start = start_date - relativedelta(years=1)
+            prev_end = end_date - relativedelta(years=1)
+            prev_filtered = filter_events_by_date(_cache["events"], prev_start, prev_end)
+            if prev_filtered:
+                current_stats = get_summary_stats(analyze_events(filtered, cfg))
+                prev_stats = get_summary_stats(analyze_events(prev_filtered, cfg))
+                yoy = compute_yoy(current_stats, prev_stats)
+                yoy["previous_period"] = {
+                    "start": prev_start.strftime("%Y-%m-%d"),
+                    "end": prev_end.strftime("%Y-%m-%d"),
+                    "event_count": len(prev_filtered),
+                }
+        response["yoy"] = yoy
 
         return jsonify(response)
 

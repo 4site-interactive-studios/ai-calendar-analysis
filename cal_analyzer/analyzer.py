@@ -184,6 +184,50 @@ def _add_to_bucket(bucket: dict, duration_minutes: float, meeting_type: MeetingT
     bucket["type_breakdown"][meeting_type.value] += 1
 
 
+def filter_events_by_date(events: list[dict],
+                           start_date: Optional[datetime] = None,
+                           end_date: Optional[datetime] = None) -> list[dict]:
+    """Filter events to those within the given date range."""
+    filtered = []
+    for event in events:
+        dt = event["start"]
+        if start_date and dt < start_date:
+            continue
+        if end_date and dt > end_date:
+            continue
+        filtered.append(event)
+    return filtered
+
+
+def compute_yoy(current_stats: dict, previous_stats: dict) -> dict:
+    """Compute Year-over-Year comparison between two period summary stats.
+
+    Returns a dict keyed by metric name, each containing current value,
+    previous value, and percentage change.
+    """
+    def pct_change(current, previous):
+        if previous == 0:
+            return None if current == 0 else 100.0
+        return round(((current - previous) / previous) * 100, 1)
+
+    metrics = [
+        "total_events", "total_hours", "avg_duration_minutes",
+        "meetings_per_working_day", "internal_count", "external_count",
+        "internal_hours", "external_hours",
+    ]
+
+    result = {}
+    for m in metrics:
+        cur = current_stats.get(m, 0)
+        prev = previous_stats.get(m, 0)
+        result[m] = {
+            "current": cur,
+            "previous": prev,
+            "change_pct": pct_change(cur, prev),
+        }
+    return result
+
+
 def get_top_participants(results: dict, n: int = 20) -> list[dict]:
     """Return top N participants by meeting count."""
     participants = list(results["participants"].values())

@@ -108,14 +108,6 @@
             margin-right: 0.5rem;
         }
 
-        .date-row {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1rem;
-        }
-
-        .date-row .upload-option { flex: 1; }
-
         .btn {
             background: var(--accent);
             color: white;
@@ -131,6 +123,7 @@
 
         .btn:hover { opacity: 0.85; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn.btn-sm { padding: 0.4rem 1rem; font-size: 0.85rem; margin-top: 0; }
 
         .btn-row { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
 
@@ -151,13 +144,82 @@
             border-left: 3px solid var(--accent);
         }
 
+        /* Filter Section */
+        .filter-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-section h2 {
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 0.2rem;
+            width: fit-content;
+        }
+
+        .filter-btn {
+            background: transparent;
+            color: var(--text-dim);
+            border: none;
+            border-radius: 6px;
+            padding: 0.4rem 0.9rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .filter-btn:hover {
+            color: var(--text);
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .custom-dates {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            margin-top: 0.75rem;
+        }
+
+        .custom-dates input[type="date"] {
+            width: auto;
+        }
+
+        .filter-info {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 0.5rem;
+        }
+
+        .filter-info .yoy-label {
+            color: var(--cyan);
+        }
+
         /* Dashboard Grid */
         .dashboard { display: none; }
         .dashboard.visible { display: block; }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
@@ -186,6 +248,30 @@
             font-size: 0.8rem;
             color: var(--text-dim);
             margin-top: 0.25rem;
+        }
+
+        .yoy-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.1rem 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.3rem;
+        }
+
+        .yoy-badge.up {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--red);
+        }
+
+        .yoy-badge.down {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--green);
+        }
+
+        .yoy-badge.flat {
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--text-dim);
         }
 
         .charts-grid {
@@ -293,6 +379,7 @@
             .upload-grid { grid-template-columns: 1fr; }
             .charts-grid { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { width: 100%; }
         }
     </style>
 </head>
@@ -325,18 +412,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="date-row">
-                    <div class="upload-option">
-                        <label>Start Date <span style="font-weight:normal;text-transform:none">(blank = all time)</span></label>
-                        <input type="date" id="startDate" name="start_date">
-                    </div>
-                    <div class="upload-option">
-                        <label>End Date <span style="font-weight:normal;text-transform:none">(blank = present)</span></label>
-                        <input type="date" id="endDate" name="end_date">
-                    </div>
-                </div>
                 <div class="btn-row">
-                    <button type="submit" class="btn" id="analyzeBtn">Analyze Calendar</button>
+                    <button type="submit" class="btn" id="analyzeBtn">Load Calendar</button>
                     <span class="status" id="formStatus"></span>
                 </div>
             </form>
@@ -344,6 +421,28 @@
                 Privacy: All data is processed locally in your browser and server memory.
                 No calendar data is stored to disk or sent to third parties.
             </div>
+        </div>
+
+        <!-- Filter Section (hidden until data loads) -->
+        <div class="filter-section" id="filterSection" style="display:none">
+            <h2>Date Range Filter</h2>
+            <div class="filter-bar" id="filterBar">
+                <button class="filter-btn active" data-filter="all">All Time</button>
+                <button class="filter-btn" data-filter="this_year">This Year</button>
+                <button class="filter-btn" data-filter="last_year">Last Year</button>
+                <button class="filter-btn" data-filter="this_quarter">This Quarter</button>
+                <button class="filter-btn" data-filter="last_quarter">Last Quarter</button>
+                <button class="filter-btn" data-filter="last_365">Last 365 Days</button>
+                <button class="filter-btn" data-filter="last_90">Last 90 Days</button>
+                <button class="filter-btn" data-filter="custom">Custom</button>
+            </div>
+            <div class="custom-dates" id="customDates" style="display:none">
+                <input type="date" id="filterStart">
+                <span style="color:var(--text-dim)">to</span>
+                <input type="date" id="filterEnd">
+                <button class="btn btn-sm" id="applyCustomFilter">Apply</button>
+            </div>
+            <div class="filter-info" id="filterInfo"></div>
         </div>
 
         <!-- Dashboard (hidden until data loads) -->
@@ -474,6 +573,7 @@
     let analyticsData = null;
     let charts = {};
     let currentPeriod = 'month';
+    let currentFilter = 'all';
 
     const COLORS = {
         internal: '#22c55e',
@@ -484,8 +584,6 @@
         cyan: '#06b6d4',
         red: '#ef4444',
     };
-
-    // Leave date fields blank by default so all events are returned
 
     // Cookie helpers
     function setCookie(name, value, days) {
@@ -505,12 +603,62 @@
         document.getElementById('icalUrl').value = savedUrl;
     }
 
+    // Date helpers
+    function fmtDate(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function getFilterDates(preset) {
+        const now = new Date();
+        switch (preset) {
+            case 'all':
+                return { start: '', end: '' };
+            case 'this_year':
+                return { start: `${now.getFullYear()}-01-01`, end: `${now.getFullYear()}-12-31` };
+            case 'last_year': {
+                const y = now.getFullYear() - 1;
+                return { start: `${y}-01-01`, end: `${y}-12-31` };
+            }
+            case 'this_quarter': {
+                const q = Math.floor(now.getMonth() / 3);
+                const qs = new Date(now.getFullYear(), q * 3, 1);
+                const qe = new Date(now.getFullYear(), q * 3 + 3, 0);
+                return { start: fmtDate(qs), end: fmtDate(qe) };
+            }
+            case 'last_quarter': {
+                let q = Math.floor(now.getMonth() / 3) - 1;
+                let year = now.getFullYear();
+                if (q < 0) { q = 3; year--; }
+                const qs = new Date(year, q * 3, 1);
+                const qe = new Date(year, q * 3 + 3, 0);
+                return { start: fmtDate(qs), end: fmtDate(qe) };
+            }
+            case 'last_365': {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 365);
+                return { start: fmtDate(start), end: fmtDate(end) };
+            }
+            case 'last_90': {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(start.getDate() - 90);
+                return { start: fmtDate(start), end: fmtDate(end) };
+            }
+            default:
+                return { start: '', end: '' };
+        }
+    }
+
     // Chart.js defaults
     Chart.defaults.color = '#94a3b8';
     Chart.defaults.borderColor = 'rgba(71, 85, 105, 0.3)';
     Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
-    // Form submission
+    // Form submission -- loads ALL events
     document.getElementById('analyzeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('analyzeBtn');
@@ -518,7 +666,7 @@
 
         btn.disabled = true;
         status.className = 'status';
-        status.textContent = 'Analyzing...';
+        status.textContent = 'Loading all events...';
 
         const formData = new FormData(e.target);
 
@@ -531,17 +679,28 @@
             }
 
             analyticsData = data;
-            status.textContent = `Loaded ${data.event_count} events (${data.source})`;
-            const rangeStart = data.date_range.start === 'all' ? 'all time' : data.date_range.start;
-            const rangeEnd = data.date_range.end === 'present' ? 'present' : data.date_range.end;
-            document.getElementById('headerStatus').textContent =
-                `${data.event_count} events | ${rangeStart} to ${rangeEnd}`;
+            const totalEvents = data.total_event_count || data.event_count;
+            status.textContent = `Loaded ${totalEvents} events (${data.source})`;
 
-            // Persist iCal URL in cookie (90 days) so it survives refresh
+            const dr = data.data_range || {};
+            document.getElementById('headerStatus').textContent =
+                `${totalEvents} events | ${dr.min_date || 'all'} to ${dr.max_date || 'present'}`;
+
+            // Persist iCal URL in cookie (90 days)
             const icalUrlValue = document.getElementById('icalUrl').value.trim();
             if (icalUrlValue) {
                 setCookie('ical_url', icalUrlValue, 90);
             }
+
+            // Show filter section
+            document.getElementById('filterSection').style.display = '';
+            currentFilter = 'all';
+            document.querySelectorAll('#filterBar .filter-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.filter === 'all');
+            });
+            document.getElementById('customDates').style.display = 'none';
+            document.getElementById('filterInfo').textContent =
+                `Showing all ${totalEvents} events (${dr.min_date} to ${dr.max_date})`;
 
             renderDashboard(data);
         } catch (err) {
@@ -551,6 +710,99 @@
             btn.disabled = false;
         }
     });
+
+    // Filter bar click
+    document.getElementById('filterBar').addEventListener('click', (e) => {
+        const btn = e.target.closest('.filter-btn');
+        if (!btn) return;
+        const filter = btn.dataset.filter;
+
+        document.querySelectorAll('#filterBar .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = filter;
+
+        if (filter === 'custom') {
+            document.getElementById('customDates').style.display = 'flex';
+            return;
+        }
+
+        document.getElementById('customDates').style.display = 'none';
+
+        if (filter === 'all') {
+            // Reset to full dataset (use the cached initial data)
+            reloadAll();
+        } else {
+            const dates = getFilterDates(filter);
+            applyFilter(dates.start, dates.end);
+        }
+    });
+
+    // Custom date apply button
+    document.getElementById('applyCustomFilter').addEventListener('click', () => {
+        const start = document.getElementById('filterStart').value;
+        const end = document.getElementById('filterEnd').value;
+        if (!start && !end) return;
+        applyFilter(start, end);
+    });
+
+    async function reloadAll() {
+        // Re-fetch all events analysis (no filter)
+        const formData = new FormData(document.getElementById('analyzeForm'));
+        const status = document.getElementById('filterInfo');
+        status.textContent = 'Loading...';
+
+        try {
+            const resp = await fetch('/api/filter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start_date: '', end_date: '' }),
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.error || 'Filter failed');
+
+            analyticsData = data;
+            const dr = data.data_range || {};
+            status.textContent = `Showing all ${data.event_count} events (${dr.min_date} to ${dr.max_date})`;
+            document.getElementById('headerStatus').textContent =
+                `${data.total_event_count} events | ${dr.min_date} to ${dr.max_date}`;
+            renderDashboard(data);
+        } catch (err) {
+            status.textContent = 'Error: ' + err.message;
+        }
+    }
+
+    async function applyFilter(startDate, endDate) {
+        const status = document.getElementById('filterInfo');
+        status.textContent = 'Filtering...';
+
+        try {
+            const resp = await fetch('/api/filter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start_date: startDate, end_date: endDate }),
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.error || 'Filter failed');
+
+            analyticsData = data;
+            let info = `Showing ${data.event_count} of ${data.total_event_count} events`;
+            if (startDate) info += ` (${startDate}`;
+            if (endDate) info += ` to ${endDate})`;
+            else if (startDate) info += ')';
+
+            if (data.yoy && data.yoy.previous_period) {
+                const pp = data.yoy.previous_period;
+                info += ` | <span class="yoy-label">YoY vs ${pp.start} to ${pp.end} (${pp.event_count} events)</span>`;
+            }
+            status.innerHTML = info;
+
+            document.getElementById('headerStatus').textContent =
+                `${data.event_count} events | ${startDate || 'all'} to ${endDate || 'present'}`;
+            renderDashboard(data);
+        } catch (err) {
+            status.textContent = 'Error: ' + err.message;
+        }
+    }
 
     // Period toggle
     document.getElementById('periodToggle').addEventListener('click', (e) => {
@@ -566,7 +818,7 @@
 
     function renderDashboard(data) {
         document.getElementById('dashboard').classList.add('visible');
-        renderStats(data.summary);
+        renderStats(data.summary, data.yoy);
         renderTimeline(data);
         renderTypeChart(data);
         renderDurationChart(data);
@@ -579,25 +831,38 @@
         renderPeriodTable(data);
     }
 
-    function renderStats(s) {
+    function makeYoyBadge(yoyData, key) {
+        if (!yoyData || !yoyData[key]) return '';
+        const change = yoyData[key].change_pct;
+        if (change === null || change === undefined) return '';
+        const prev = yoyData[key].previous;
+        const arrow = change > 0 ? '&#9650;' : change < 0 ? '&#9660;' : '&#9654;';
+        const cls = change > 0 ? 'up' : change < 0 ? 'down' : 'flat';
+        const absChange = Math.abs(change);
+        return `<div class="yoy-badge ${cls}">${arrow} ${absChange}% vs last year (${prev})</div>`;
+    }
+
+    function renderStats(s, yoy) {
         const grid = document.getElementById('statsGrid');
         grid.innerHTML = '';
 
         const cards = [
-            { label: 'Total Meetings', value: s.total_events, sub: `${s.total_hours}h total` },
-            { label: 'Avg Duration', value: `${s.avg_duration_minutes}m`, sub: `${s.avg_attendees} avg attendees` },
-            { label: 'Per Work Day', value: s.meetings_per_working_day, sub: 'meetings on average' },
-            { label: 'Internal', value: s.internal_count, sub: `${s.internal_hours}h`, color: COLORS.internal },
-            { label: 'External', value: s.external_count, sub: `${s.external_hours}h`, color: COLORS.external },
+            { label: 'Total Meetings', value: s.total_events, sub: `${s.total_hours}h total`, yoyKey: 'total_events' },
+            { label: 'Avg Duration', value: `${s.avg_duration_minutes}m`, sub: `${s.avg_attendees} avg attendees`, yoyKey: 'avg_duration_minutes' },
+            { label: 'Per Work Day', value: s.meetings_per_working_day, sub: 'meetings on average', yoyKey: 'meetings_per_working_day' },
+            { label: 'Internal', value: s.internal_count, sub: `${s.internal_hours}h`, color: COLORS.internal, yoyKey: 'internal_count' },
+            { label: 'External', value: s.external_count, sub: `${s.external_hours}h`, color: COLORS.external, yoyKey: 'external_count' },
         ];
 
         cards.forEach(c => {
             const div = document.createElement('div');
             div.className = 'stat-card';
+            const yoyHtml = makeYoyBadge(yoy, c.yoyKey);
             div.innerHTML = `
                 <div class="label">${c.label}</div>
                 <div class="value" ${c.color ? `style="color:${c.color}"` : ''}>${c.value}</div>
                 <div class="sub">${c.sub}</div>
+                ${yoyHtml}
             `;
             grid.appendChild(div);
         });
