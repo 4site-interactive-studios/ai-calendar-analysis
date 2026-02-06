@@ -97,11 +97,15 @@ def analyze_events(events: list[dict], config: dict) -> dict:
             email = att.get("email", "")
             if att.get("self") or not email or email.endswith("calendar.google.com"):
                 continue
-            name = att.get("name") or email
+            name = att.get("name") or _name_from_email(email)
             p = results["participants"][email]
             p["count"] += 1
             p["total_minutes"] += duration
-            p["name"] = name
+            # Prefer a real display name over a derived one
+            if not p.get("name") or p["name"] == email:
+                p["name"] = name
+            elif att.get("name"):
+                p["name"] = att["name"]
             p["email"] = email
 
         # Organization breakdown (external meetings)
@@ -149,6 +153,19 @@ def analyze_events(events: list[dict], config: dict) -> dict:
     results["duration_distribution"] = dict(results["duration_distribution"])
 
     return results
+
+
+def _name_from_email(email: str) -> str:
+    """Derive a display name from an email address.
+
+    'tayo@4sitestudios.com' -> 'Tayo'
+    'bryan.casler@gmail.com' -> 'Bryan Casler'
+    'mary-jane@example.com' -> 'Mary Jane'
+    """
+    local = email.split("@")[0] if "@" in email else email
+    # Split on dots, hyphens, underscores
+    parts = local.replace("-", ".").replace("_", ".").split(".")
+    return " ".join(p.title() for p in parts if p)
 
 
 def _empty_bucket() -> dict:
