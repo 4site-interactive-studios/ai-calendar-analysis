@@ -31,6 +31,11 @@ def _week(dt: datetime) -> str:
     return f"{iso[0]}-W{iso[1]:02d}"
 
 
+def _day(dt: datetime) -> str:
+    """Return date string like '2025-02-03'."""
+    return dt.strftime("%Y-%m-%d")
+
+
 def analyze_events(events: list[dict], config: dict) -> dict:
     """Run full analytics on parsed events.
 
@@ -46,6 +51,7 @@ def analyze_events(events: list[dict], config: dict) -> dict:
         "by_quarter": defaultdict(lambda: _empty_bucket()),
         "by_year": defaultdict(lambda: _empty_bucket()),
         "by_week": defaultdict(lambda: _empty_bucket()),
+        "by_day": defaultdict(lambda: _empty_bucket()),
         "by_type": defaultdict(lambda: _empty_bucket()),
         "by_day_of_week": defaultdict(lambda: _empty_bucket()),
         "by_hour_of_day": defaultdict(lambda: _empty_bucket()),
@@ -91,6 +97,7 @@ def analyze_events(events: list[dict], config: dict) -> dict:
             ("by_quarter", _quarter),
             ("by_year", _year),
             ("by_week", _week),
+            ("by_day", _day),
         ]:
             key = period_fn(start)
             _add_to_bucket(results[period_key][key], duration, meeting_type)
@@ -111,15 +118,18 @@ def analyze_events(events: list[dict], config: dict) -> dict:
             email = att.get("email", "")
             if att.get("self") or not email or email.endswith("calendar.google.com"):
                 continue
-            name = att.get("name") or _name_from_email(email)
+            raw_name = att.get("name", "")
+            # Treat names containing '@' as unparsed emails, not real names
+            real_name = raw_name if raw_name and "@" not in raw_name else ""
+            name = real_name or _name_from_email(email)
             p = results["participants"][email]
             p["count"] += 1
             p["total_minutes"] += duration
             # Prefer a real display name over a derived one
-            if not p.get("name") or p["name"] == email:
+            if not p.get("name") or "@" in p.get("name", ""):
                 p["name"] = name
-            elif att.get("name"):
-                p["name"] = att["name"]
+            elif real_name:
+                p["name"] = real_name
             p["email"] = email
 
         # Organization breakdown (external meetings)
@@ -170,6 +180,7 @@ def analyze_events(events: list[dict], config: dict) -> dict:
     results["by_quarter"] = dict(sorted(results["by_quarter"].items()))
     results["by_year"] = dict(sorted(results["by_year"].items()))
     results["by_week"] = dict(sorted(results["by_week"].items()))
+    results["by_day"] = dict(sorted(results["by_day"].items()))
     results["by_type"] = dict(results["by_type"])
     results["by_day_of_week"] = dict(results["by_day_of_week"])
     results["by_hour_of_day"] = dict(results["by_hour_of_day"])

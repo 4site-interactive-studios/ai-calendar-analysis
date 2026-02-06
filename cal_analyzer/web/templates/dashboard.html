@@ -491,7 +491,7 @@
         <h1><span>{{ config.company_name }}</span> Calendar Analytics</h1>
         <div style="display:flex;align-items:center;gap:1rem">
             <span class="status" id="headerStatus"></span>
-            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.5.0</span>
+            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.6.0</span>
         </div>
     </div>
 
@@ -573,6 +573,7 @@
                 <button class="period-btn" data-period="quarter">Quarterly</button>
                 <button class="period-btn" data-period="year">Yearly</button>
                 <button class="period-btn" data-period="week">Weekly</button>
+                <button class="period-btn" data-period="day">Daily</button>
             </div>
 
             <!-- Charts -->
@@ -1209,7 +1210,7 @@
     }
 
     function renderPeriodTable(data) {
-        const titles = { month: 'Monthly', quarter: 'Quarterly', year: 'Yearly', week: 'Weekly' };
+        const titles = { month: 'Monthly', quarter: 'Quarterly', year: 'Yearly', week: 'Weekly', day: 'Daily' };
         document.getElementById('periodTableTitle').textContent = `${titles[currentPeriod]} Breakdown`;
 
         const periodData = data[`by_${currentPeriod}`] || {};

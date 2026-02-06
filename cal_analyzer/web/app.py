@@ -54,6 +54,7 @@ def create_app(config_path: str = "config.yaml"):
             "by_quarter": _serialize_buckets(results["by_quarter"]),
             "by_year": _serialize_buckets(results["by_year"]),
             "by_week": _serialize_buckets(results["by_week"]),
+            "by_day": _serialize_buckets(results["by_day"]),
             "by_type": _serialize_buckets(results["by_type"]),
             "by_day_of_week": _serialize_buckets(results["by_day_of_week"]),
             "duration_distribution": results["duration_distribution"],
