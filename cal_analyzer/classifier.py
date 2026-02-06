@@ -9,34 +9,53 @@ class MeetingType(str, Enum):
     INTERNAL = "internal"
     EXTERNAL = "external"
     SOLO = "solo"
+    HOLD = "hold"
 
 
 def classify_meeting(event: dict, config: dict) -> MeetingType:
     """Classify a meeting based on attendee email domains.
 
-    - Solo: No attendees besides yourself
-    - Internal: All attendees are from company domains
+    - Hold: Title contains "hold" (case-insensitive) -- calendar placeholder
+    - Solo: No attendees, or only a single company-domain attendee
+    - Internal: All attendees are from company domains (2+)
     - External: Any attendee is from a non-company domain
     """
+    # Check for hold events first
+    summary = event.get("summary", "")
+    if "hold" in summary.lower():
+        return MeetingType.HOLD
+
     company_domains = set(d.lower() for d in config.get("company_domains", []))
     attendees = event.get("attendees", [])
 
-    # Filter out resource rooms and self
+    # Filter out resource rooms (keep self -- needed for solo detection)
     real_attendees = [
         a for a in attendees
-        if not a.get("self", False)
-        and not a.get("email", "").endswith("calendar.google.com")
+        if not a.get("email", "").endswith("calendar.google.com")
         and a.get("email", "") != ""
     ]
 
     if len(real_attendees) == 0:
         return MeetingType.SOLO
 
+    # Check if everyone is from company domains
+    company_attendees = []
+    external_attendees = []
     for att in real_attendees:
         email = att.get("email", "").lower()
         domain = email.split("@")[-1] if "@" in email else ""
-        if domain and domain not in company_domains:
-            return MeetingType.EXTERNAL
+        if domain and domain in company_domains:
+            company_attendees.append(att)
+        elif domain:
+            external_attendees.append(att)
+
+    # Any external attendee -> external meeting
+    if external_attendees:
+        return MeetingType.EXTERNAL
+
+    # Only one company person on the event -> solo
+    if len(company_attendees) <= 1:
+        return MeetingType.SOLO
 
     return MeetingType.INTERNAL
 

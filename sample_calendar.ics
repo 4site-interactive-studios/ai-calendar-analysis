@@ -218,4 +218,27 @@ SUMMARY:Focus time
 UID:021@4site-sample
 ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
 END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250211T090000
+DTEND:20250211T100000
+SUMMARY:Hold - Interview slot
+UID:022@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250213T150000
+DTEND:20250213T160000
+SUMMARY:Lunch hold
+UID:023@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250212T160000
+DTEND:20250212T163000
+SUMMARY:Bryan's prep time
+UID:024@4site-sample
+ORGANIZER;CN=Bryan Casler:mailto:bryan@4sitestudios.com
+ATTENDEE;CN=Bryan Casler;PARTSTAT=ACCEPTED:mailto:bryan@4sitestudios.com
+END:VEVENT
 END:VCALENDAR

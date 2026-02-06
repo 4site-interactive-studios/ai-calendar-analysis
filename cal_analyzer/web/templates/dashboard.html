@@ -692,6 +692,7 @@
         internal: '#22c55e',
         external: '#eab308',
         solo: '#94a3b8',
+        hold: '#64748b',
         accent: '#3b82f6',
         purple: '#a855f7',
         cyan: '#06b6d4',
@@ -974,12 +975,22 @@
         const grid = document.getElementById('statsGrid');
         grid.innerHTML = '';
 
+        const dh = s.daily_hours || {};
+        const dhAll = dh.all || {};
+        const dhInt = dh.internal || {};
+        const dhExt = dh.external || {};
+
+        // Hold badge: show if any holds were excluded
+        const holdNote = s.hold_events
+            ? `<span style="font-size:0.7rem;color:var(--text-dim)">(${s.hold_events} holds excluded, ${s.hold_hours}h)</span>`
+            : '';
+
         const cards = [
-            { label: 'Total Meetings', value: s.total_events, sub: `${s.total_hours}h total`, yoyKey: 'total_events' },
-            { label: 'Avg Duration', value: `${s.avg_duration_minutes}m`, sub: `${s.avg_attendees} avg attendees`, yoyKey: 'avg_duration_minutes' },
+            { label: 'Total Meetings', value: s.total_events, sub: `${s.total_hours}h total ${holdNote}`, yoyKey: 'total_events' },
+            { label: 'Avg Hours / Day', value: `${dhAll.mean || 0}h`, sub: `median ${dhAll.median || 0}h across ${dhAll.days || 0} days`, color: COLORS.accent },
             { label: 'Per Work Day', value: s.meetings_per_working_day, sub: 'meetings on average', yoyKey: 'meetings_per_working_day' },
-            { label: 'Internal', value: s.internal_count, sub: `${s.internal_hours}h`, color: COLORS.internal, yoyKey: 'internal_count' },
-            { label: 'External', value: s.external_count, sub: `${s.external_hours}h`, color: COLORS.external, yoyKey: 'external_count' },
+            { label: 'Internal', value: s.internal_count, sub: `${s.internal_hours}h total, avg ${dhInt.mean || 0}h/day`, color: COLORS.internal, yoyKey: 'internal_count' },
+            { label: 'External', value: s.external_count, sub: `${s.external_hours}h total, avg ${dhExt.mean || 0}h/day`, color: COLORS.external, yoyKey: 'external_count' },
         ];
 
         cards.forEach(c => {

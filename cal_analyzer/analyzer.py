@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import statistics
 from collections import defaultdict
 from datetime import datetime
 from typing import Optional
@@ -39,6 +40,8 @@ def analyze_events(events: list[dict], config: dict) -> dict:
     results = {
         "total_events": 0,
         "total_hours": 0.0,
+        "hold_events": 0,
+        "hold_hours": 0.0,
         "by_month": defaultdict(lambda: _empty_bucket()),
         "by_quarter": defaultdict(lambda: _empty_bucket()),
         "by_year": defaultdict(lambda: _empty_bucket()),
@@ -53,10 +56,15 @@ def analyze_events(events: list[dict], config: dict) -> dict:
         "recurring_vs_oneoff": {"recurring": _empty_bucket(), "one-off": _empty_bucket()},
         "duration_distribution": defaultdict(int),
         "busiest_days": [],
+        "daily_hours": {},  # mean/median hours per day
         "events": [],  # enriched events
     }
 
     daily_totals = defaultdict(lambda: {"count": 0, "minutes": 0.0})
+    # Per-day hours by type (excludes holds)
+    daily_hours_all = defaultdict(float)
+    daily_hours_internal = defaultdict(float)
+    daily_hours_external = defaultdict(float)
 
     for event in events:
         meeting_type = classify_meeting(event, config)
@@ -67,6 +75,12 @@ def analyze_events(events: list[dict], config: dict) -> dict:
         # Enrich event
         enriched = {**event, "meeting_type": meeting_type.value, "organizations": ext_orgs}
         results["events"].append(enriched)
+
+        # Track hold events separately -- excluded from all other tallies
+        if meeting_type == MeetingType.HOLD:
+            results["hold_events"] += 1
+            results["hold_hours"] += duration / 60
+            continue
 
         results["total_events"] += 1
         results["total_hours"] += duration / 60
@@ -128,10 +142,16 @@ def analyze_events(events: list[dict], config: dict) -> dict:
         else:
             results["duration_distribution"]["90+ min"] += 1
 
-        # Daily totals for busiest days
+        # Daily totals for busiest days and per-day metrics
         day_key = start.strftime("%Y-%m-%d")
         daily_totals[day_key]["count"] += 1
         daily_totals[day_key]["minutes"] += duration
+        hours = duration / 60
+        daily_hours_all[day_key] += hours
+        if meeting_type == MeetingType.INTERNAL:
+            daily_hours_internal[day_key] += hours
+        elif meeting_type == MeetingType.EXTERNAL:
+            daily_hours_external[day_key] += hours
 
     # Compute busiest days (top 10)
     sorted_days = sorted(daily_totals.items(), key=lambda x: x[1]["minutes"], reverse=True)
@@ -139,6 +159,11 @@ def analyze_events(events: list[dict], config: dict) -> dict:
         {"date": d, "meetings": v["count"], "hours": round(v["minutes"] / 60, 1)}
         for d, v in sorted_days[:10]
     ]
+
+    # Compute daily hours statistics (only days that had meetings)
+    results["daily_hours"] = _compute_daily_stats(
+        daily_hours_all, daily_hours_internal, daily_hours_external,
+    )
 
     # Convert defaultdicts to regular dicts for serialization
     results["by_month"] = dict(sorted(results["by_month"].items()))
@@ -166,6 +191,29 @@ def _name_from_email(email: str) -> str:
     # Split on dots, hyphens, underscores
     parts = local.replace("-", ".").replace("_", ".").split(".")
     return " ".join(p.title() for p in parts if p)
+
+
+def _compute_daily_stats(
+    daily_all: dict, daily_internal: dict, daily_external: dict,
+) -> dict:
+    """Compute mean/median hours per day for all, internal, and external."""
+    def _stats(values: list[float]) -> dict:
+        if not values:
+            return {"mean": 0.0, "median": 0.0, "days": 0}
+        return {
+            "mean": round(statistics.mean(values), 2),
+            "median": round(statistics.median(values), 2),
+            "days": len(values),
+        }
+
+    all_vals = list(daily_all.values())
+    int_vals = list(daily_internal.values())
+    ext_vals = list(daily_external.values())
+    return {
+        "all": _stats(all_vals),
+        "internal": _stats(int_vals),
+        "external": _stats(ext_vals),
+    }
 
 
 def _empty_bucket() -> dict:
@@ -239,13 +287,20 @@ def get_summary_stats(results: dict) -> dict:
     """Compute high-level summary statistics."""
     total = results["total_events"]
     if total == 0:
-        return {"total_events": 0, "total_hours": 0}
+        return {
+            "total_events": 0, "total_hours": 0,
+            "hold_events": results.get("hold_events", 0),
+            "hold_hours": round(results.get("hold_hours", 0), 1),
+            "daily_hours": results.get("daily_hours", {}),
+        }
 
     type_counts = results["by_type"]
     avg_duration = (results["total_hours"] * 60) / total if total else 0
+    # Only count attendees on non-hold events
+    non_hold = [e for e in results["events"] if e.get("meeting_type") != "hold"]
     avg_attendees = (
-        sum(e["attendee_count"] for e in results["events"]) / total
-        if total else 0
+        sum(e["attendee_count"] for e in non_hold) / len(non_hold)
+        if non_hold else 0
     )
 
     # Meetings per working day (approximate)
@@ -269,4 +324,7 @@ def get_summary_stats(results: dict) -> dict:
         "oneoff_count": results["recurring_vs_oneoff"]["one-off"]["count"],
         "internal_hours": type_counts.get("internal", {}).get("total_hours", 0),
         "external_hours": type_counts.get("external", {}).get("total_hours", 0),
+        "hold_events": results.get("hold_events", 0),
+        "hold_hours": round(results.get("hold_hours", 0), 1),
+        "daily_hours": results.get("daily_hours", {}),
     }
