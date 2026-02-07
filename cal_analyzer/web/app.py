@@ -140,7 +140,7 @@ def create_app(config_path: str = "config.yaml"):
         response["yoy"] = None
 
         # Also return default exclude types so the UI knows the initial state
-        response["exclude_types"] = ["hold", "ooo", "all_day"]
+        response["exclude_types"] = ["hold", "ooo", "all_day", "solo"]
         return jsonify(response)
 
     @app.route("/api/filter", methods=["POST"])

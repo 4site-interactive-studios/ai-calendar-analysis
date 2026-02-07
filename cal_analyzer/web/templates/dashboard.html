@@ -491,7 +491,7 @@
         <h1><span>{{ config.company_name }}</span> Calendar Analytics</h1>
         <div style="display:flex;align-items:center;gap:1rem">
             <span class="status" id="headerStatus"></span>
-            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.7.0</span>
+            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.8.0</span>
         </div>
     </div>
 
@@ -537,7 +537,7 @@
                 <div class="loading-text" id="loadingText">Loading calendar events...</div>
                 <div class="loading-sub" id="loadingSub">Fetching and parsing your iCal data</div>
                 <button class="btn btn-sm" id="loadingCancel" style="display:none;background:var(--surface2);margin-top:0.5rem">Cancel</button>
-                <div style="font-size:0.65rem;color:var(--text-dim);opacity:0.5;margin-top:0.5rem" id="loadingVersion">v1.7.0</div>
+                <div style="font-size:0.65rem;color:var(--text-dim);opacity:0.5;margin-top:0.5rem" id="loadingVersion">v1.8.0</div>
             </div>
         </div>
 
@@ -545,12 +545,12 @@
         <div class="filter-section" id="filterSection" style="display:none">
             <h2>Date Range Filter</h2>
             <div class="filter-bar" id="filterBar">
-                <button class="filter-btn active" data-filter="all">All Time</button>
+                <button class="filter-btn" data-filter="all">All Time</button>
                 <button class="filter-btn" data-filter="this_year">This Year</button>
                 <button class="filter-btn" data-filter="last_year">Last Year</button>
                 <button class="filter-btn" data-filter="this_quarter">This Quarter</button>
                 <button class="filter-btn" data-filter="last_quarter">Last Quarter</button>
-                <button class="filter-btn" data-filter="last_365">Last 365 Days</button>
+                <button class="filter-btn active" data-filter="last_365">Last 365 Days</button>
                 <button class="filter-btn" data-filter="last_90">Last 90 Days</button>
                 <button class="filter-btn" data-filter="custom">Custom</button>
             </div>
@@ -566,7 +566,7 @@
             <div class="filter-bar" id="typeToggleBar">
                 <button class="filter-btn active" data-type="internal">Internal</button>
                 <button class="filter-btn active" data-type="external">External</button>
-                <button class="filter-btn active" data-type="solo">Solo</button>
+                <button class="filter-btn" data-type="solo">Solo</button>
                 <button class="filter-btn" data-type="ooo">OOO / PTO</button>
                 <button class="filter-btn" data-type="hold">Holds</button>
                 <button class="filter-btn" data-type="all_day">All-Day</button>
@@ -703,7 +703,7 @@
     let charts = {};
     let currentPeriod = 'month';
     let currentFilter = 'all';
-    let excludeTypes = new Set(['hold', 'ooo', 'all_day']);
+    let excludeTypes = new Set(['hold', 'ooo', 'all_day', 'solo']);
 
     const COLORS = {
         internal: '#22c55e',
@@ -849,17 +849,17 @@
                 setCookie('ical_url', icalUrlValue, 90);
             }
 
-            // Show filter section
+            // Show filter section and default to Last 365 Days
             document.getElementById('filterSection').style.display = '';
-            currentFilter = 'all';
+            currentFilter = 'last_365';
             document.querySelectorAll('#filterBar .filter-btn').forEach(b => {
-                b.classList.toggle('active', b.dataset.filter === 'all');
+                b.classList.toggle('active', b.dataset.filter === 'last_365');
             });
             document.getElementById('customDates').style.display = 'none';
-            document.getElementById('filterInfo').textContent =
-                `Showing all ${totalEvents} events (${dr.min_date} to ${dr.max_date})`;
 
-            renderDashboard(data);
+            // Immediately apply the last-365 filter with type exclusions
+            const dates365 = getFilterDates('last_365');
+            applyFilter(dates365.start, dates365.end);
         } catch (err) {
             if (err.name === 'AbortError') {
                 status.textContent = 'Cancelled';

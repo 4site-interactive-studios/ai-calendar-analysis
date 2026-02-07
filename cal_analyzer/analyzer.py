@@ -50,7 +50,7 @@ def analyze_events(events: list[dict], config: dict,
     by time period, meeting type, participants, and more.
     """
     if exclude_types is None:
-        exclude_types = {"hold", "ooo", "all_day"}
+        exclude_types = {"hold", "ooo", "all_day", "solo"}
 
     results = {
         "total_events": 0,
