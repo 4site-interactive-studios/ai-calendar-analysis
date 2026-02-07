@@ -491,7 +491,7 @@
         <h1><span>{{ config.company_name }}</span> Calendar Analytics</h1>
         <div style="display:flex;align-items:center;gap:1rem">
             <span class="status" id="headerStatus"></span>
-            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.6.0</span>
+            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.7.0</span>
         </div>
     </div>
 
@@ -537,7 +537,7 @@
                 <div class="loading-text" id="loadingText">Loading calendar events...</div>
                 <div class="loading-sub" id="loadingSub">Fetching and parsing your iCal data</div>
                 <button class="btn btn-sm" id="loadingCancel" style="display:none;background:var(--surface2);margin-top:0.5rem">Cancel</button>
-                <div style="font-size:0.65rem;color:var(--text-dim);opacity:0.5;margin-top:0.5rem" id="loadingVersion">v1.6.0</div>
+                <div style="font-size:0.65rem;color:var(--text-dim);opacity:0.5;margin-top:0.5rem" id="loadingVersion">v1.7.0</div>
             </div>
         </div>
 
@@ -561,6 +561,16 @@
                 <button class="btn btn-sm" id="applyCustomFilter">Apply</button>
             </div>
             <div class="filter-info" id="filterInfo"></div>
+
+            <h2 style="margin-top:1rem">Include in Analysis</h2>
+            <div class="filter-bar" id="typeToggleBar">
+                <button class="filter-btn active" data-type="internal">Internal</button>
+                <button class="filter-btn active" data-type="external">External</button>
+                <button class="filter-btn active" data-type="solo">Solo</button>
+                <button class="filter-btn" data-type="ooo">OOO / PTO</button>
+                <button class="filter-btn" data-type="hold">Holds</button>
+                <button class="filter-btn" data-type="all_day">All-Day</button>
+            </div>
         </div>
 
         <!-- Dashboard (hidden until data loads) -->
@@ -693,6 +703,7 @@
     let charts = {};
     let currentPeriod = 'month';
     let currentFilter = 'all';
+    let excludeTypes = new Set(['hold', 'ooo', 'all_day']);
 
     const COLORS = {
         internal: '#22c55e',
@@ -700,6 +711,7 @@
         solo: '#94a3b8',
         hold: '#64748b',
         ooo: '#64748b',
+        all_day: '#64748b',
         accent: '#3b82f6',
         purple: '#a855f7',
         cyan: '#06b6d4',
@@ -897,6 +909,30 @@
         applyFilter(start, end);
     });
 
+    // Meeting type toggle
+    document.getElementById('typeToggleBar').addEventListener('click', (e) => {
+        const btn = e.target.closest('.filter-btn');
+        if (!btn || !btn.dataset.type) return;
+        const t = btn.dataset.type;
+        btn.classList.toggle('active');
+        if (btn.classList.contains('active')) {
+            excludeTypes.delete(t);
+        } else {
+            excludeTypes.add(t);
+        }
+        // Re-run current filter with new type exclusions
+        if (currentFilter === 'all') {
+            reloadAll();
+        } else if (currentFilter === 'custom') {
+            const start = document.getElementById('filterStart').value;
+            const end = document.getElementById('filterEnd').value;
+            applyFilter(start, end);
+        } else {
+            const dates = getFilterDates(currentFilter);
+            applyFilter(dates.start, dates.end);
+        }
+    });
+
     async function reloadAll() {
         const status = document.getElementById('filterInfo');
         status.innerHTML = '<span class="spinner"></span> Analyzing all events...';
@@ -905,14 +941,14 @@
             const resp = await fetch('/api/filter', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ start_date: '', end_date: '' }),
+                body: JSON.stringify({ start_date: '', end_date: '', exclude_types: [...excludeTypes] }),
             });
             const data = await resp.json();
             if (!resp.ok) throw new Error(data.error || 'Filter failed');
 
             analyticsData = data;
             const dr = data.data_range || {};
-            status.textContent = `Showing all ${data.event_count} events (${dr.min_date} to ${dr.max_date})`;
+            status.textContent = `Showing ${data.event_count} events (${dr.min_date} to ${dr.max_date})`;
             document.getElementById('headerStatus').textContent =
                 `${data.total_event_count} events | ${dr.min_date} to ${dr.max_date}`;
             renderDashboard(data);
@@ -929,7 +965,7 @@
             const resp = await fetch('/api/filter', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ start_date: startDate, end_date: endDate }),
+                body: JSON.stringify({ start_date: startDate, end_date: endDate, exclude_types: [...excludeTypes] }),
             });
             const data = await resp.json();
             if (!resp.ok) throw new Error(data.error || 'Filter failed');
@@ -1001,10 +1037,17 @@
         const dhInt = dh.internal || {};
         const dhExt = dh.external || {};
 
-        // Exclusion badges: show if any holds/OOO were excluded
+        // Exclusion note: show what types were excluded
+        const excl = s.excluded || {};
+        const typeLabels = { hold: 'holds', ooo: 'OOO', all_day: 'all-day' };
         const excludedParts = [];
-        if (s.hold_events) excludedParts.push(`${s.hold_events} holds (${s.hold_hours}h)`);
-        if (s.ooo_events) excludedParts.push(`${s.ooo_events} OOO (${s.ooo_hours}h)`);
+        for (const [t, info] of Object.entries(excl)) {
+            if (info.count) {
+                const label = typeLabels[t] || t;
+                const hrs = info.hours ? `, ${Math.round(info.hours * 10) / 10}h` : '';
+                excludedParts.push(`${info.count} ${label}${hrs}`);
+            }
+        }
         const holdNote = excludedParts.length
             ? `<span style="font-size:0.7rem;color:var(--text-dim)">(excl. ${excludedParts.join(', ')})</span>`
             : '';

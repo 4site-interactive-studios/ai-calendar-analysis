@@ -36,9 +36,9 @@ def create_app(config_path: str = "config.yaml"):
     def index():
         return render_template("dashboard.html", config=cfg)
 
-    def _build_response(events, source_label, start_date=None, end_date=None):
+    def _build_response(events, source_label, start_date=None, end_date=None, exclude_types=None):
         """Run analytics and build JSON response."""
-        results = analyze_events(events, cfg)
+        results = analyze_events(events, cfg, exclude_types=exclude_types)
         stats = get_summary_stats(results)
         top_people = get_top_participants(results, 25)
 
@@ -138,6 +138,9 @@ def create_app(config_path: str = "config.yaml"):
             "max_date": max_date.strftime("%Y-%m-%d"),
         }
         response["yoy"] = None
+
+        # Also return default exclude types so the UI knows the initial state
+        response["exclude_types"] = ["hold", "ooo", "all_day"]
         return jsonify(response)
 
     @app.route("/api/filter", methods=["POST"])
@@ -153,6 +156,8 @@ def create_app(config_path: str = "config.yaml"):
         data = request.get_json() or {}
         start_str = data.get("start_date", "")
         end_str = data.get("end_date", "")
+        exclude_list = data.get("exclude_types", None)
+        exclude_types = set(exclude_list) if exclude_list is not None else None
 
         start_date = _parse_date(start_str) if start_str else None
         end_date = _parse_date(end_str) if end_str else None
@@ -162,7 +167,7 @@ def create_app(config_path: str = "config.yaml"):
         if not filtered:
             return jsonify({"error": "No events in selected date range"}), 400
 
-        response = _build_response(filtered, _cache["source"], start_date, end_date)
+        response = _build_response(filtered, _cache["source"], start_date, end_date, exclude_types)
         response["total_event_count"] = len(_cache["events"])
 
         # Data range of all cached events
@@ -179,8 +184,8 @@ def create_app(config_path: str = "config.yaml"):
             prev_end = end_date - relativedelta(years=1)
             prev_filtered = filter_events_by_date(_cache["events"], prev_start, prev_end)
             if prev_filtered:
-                current_stats = get_summary_stats(analyze_events(filtered, cfg))
-                prev_stats = get_summary_stats(analyze_events(prev_filtered, cfg))
+                current_stats = get_summary_stats(analyze_events(filtered, cfg, exclude_types=exclude_types))
+                prev_stats = get_summary_stats(analyze_events(prev_filtered, cfg, exclude_types=exclude_types))
                 yoy = compute_yoy(current_stats, prev_stats)
                 yoy["previous_period"] = {
                     "start": prev_start.strftime("%Y-%m-%d"),

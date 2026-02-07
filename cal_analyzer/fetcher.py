@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from dateutil.relativedelta import relativedelta
@@ -61,26 +61,28 @@ def fetch_events(service, calendar_id: str = "primary",
 def parse_event(event: dict) -> Optional[dict]:
     """Parse a raw API event into a normalized dictionary.
 
-    Skips all-day events (no dateTime field) since they aren't
-    typical meetings.
-
     Returns:
         Parsed event dict or None if it should be skipped.
     """
     start_raw = event.get("start", {})
     end_raw = event.get("end", {})
 
-    # Skip all-day events
-    if "dateTime" not in start_raw:
-        return None
+    all_day = "dateTime" not in start_raw
 
-    start_dt = datetime.fromisoformat(start_raw["dateTime"])
-    end_dt = datetime.fromisoformat(end_raw["dateTime"])
-    duration_minutes = (end_dt - start_dt).total_seconds() / 60
-
-    # Skip events with zero or negative duration
-    if duration_minutes <= 0:
-        return None
+    if all_day:
+        # All-day event: parse date strings into datetimes at midnight UTC
+        start_date = date.fromisoformat(start_raw.get("date", ""))
+        end_date = date.fromisoformat(end_raw.get("date", ""))
+        start_dt = datetime(start_date.year, start_date.month, start_date.day, tzinfo=timezone.utc)
+        end_dt = datetime(end_date.year, end_date.month, end_date.day, tzinfo=timezone.utc)
+        duration_minutes = 0.0
+    else:
+        start_dt = datetime.fromisoformat(start_raw["dateTime"])
+        end_dt = datetime.fromisoformat(end_raw["dateTime"])
+        duration_minutes = (end_dt - start_dt).total_seconds() / 60
+        # Skip events with zero or negative duration
+        if duration_minutes <= 0:
+            return None
 
     attendees = []
     for att in event.get("attendees", []):
@@ -106,6 +108,7 @@ def parse_event(event: dict) -> Optional[dict]:
         "recurring": event.get("recurringEventId") is not None,
         "hangout_link": event.get("hangoutLink", ""),
         "location": event.get("location", ""),
+        "all_day": all_day,
     }
 
 

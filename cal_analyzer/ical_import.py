@@ -71,24 +71,26 @@ def ical_to_parsed_events(cal: Calendar,
         start_dt = dtstart.dt
         end_dt = dtend.dt
 
-        # Skip all-day events (date objects, not datetime)
-        if not isinstance(start_dt, datetime):
-            continue
-
-        # Ensure timezone-aware for filtering
-        if start_dt.tzinfo is None:
-            start_dt = start_dt.replace(tzinfo=timezone.utc)
-        if end_dt.tzinfo is None:
-            end_dt = end_dt.replace(tzinfo=timezone.utc)
+        # Detect all-day events (date objects, not datetime)
+        all_day = not isinstance(start_dt, datetime)
+        if all_day:
+            start_dt = datetime(start_dt.year, start_dt.month, start_dt.day, tzinfo=timezone.utc)
+            end_dt = datetime(end_dt.year, end_dt.month, end_dt.day, tzinfo=timezone.utc)
+            duration_minutes = 0.0
+        else:
+            # Ensure timezone-aware for filtering
+            if start_dt.tzinfo is None:
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+            if end_dt.tzinfo is None:
+                end_dt = end_dt.replace(tzinfo=timezone.utc)
+            duration_minutes = (end_dt - start_dt).total_seconds() / 60
+            if duration_minutes <= 0:
+                continue
 
         # Apply date filters
         if start_date and start_dt < start_date:
             continue
         if end_date and start_dt > end_date:
-            continue
-
-        duration_minutes = (end_dt - start_dt).total_seconds() / 60
-        if duration_minutes <= 0:
             continue
 
         # Parse attendees
@@ -141,6 +143,7 @@ def ical_to_parsed_events(cal: Calendar,
             "recurring": recurring,
             "hangout_link": "",
             "location": location,
+            "all_day": all_day,
         })
 
     return events

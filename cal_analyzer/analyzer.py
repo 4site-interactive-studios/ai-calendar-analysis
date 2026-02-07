@@ -36,19 +36,26 @@ def _day(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%d")
 
 
-def analyze_events(events: list[dict], config: dict) -> dict:
+def analyze_events(events: list[dict], config: dict,
+                    exclude_types: Optional[set] = None) -> dict:
     """Run full analytics on parsed events.
+
+    Args:
+        events: List of parsed event dicts.
+        config: Application config dict.
+        exclude_types: Set of MeetingType values to exclude from tallies.
+            Defaults to {"hold", "ooo", "all_day"}.
 
     Returns a comprehensive analytics dictionary with breakdowns
     by time period, meeting type, participants, and more.
     """
+    if exclude_types is None:
+        exclude_types = {"hold", "ooo", "all_day"}
+
     results = {
         "total_events": 0,
         "total_hours": 0.0,
-        "hold_events": 0,
-        "hold_hours": 0.0,
-        "ooo_events": 0,
-        "ooo_hours": 0.0,
+        "excluded": defaultdict(lambda: {"count": 0, "hours": 0.0}),
         "by_month": defaultdict(lambda: _empty_bucket()),
         "by_quarter": defaultdict(lambda: _empty_bucket()),
         "by_year": defaultdict(lambda: _empty_bucket()),
@@ -84,14 +91,10 @@ def analyze_events(events: list[dict], config: dict) -> dict:
         enriched = {**event, "meeting_type": meeting_type.value, "organizations": ext_orgs}
         results["events"].append(enriched)
 
-        # Track hold/OOO events separately -- excluded from all other tallies
-        if meeting_type == MeetingType.HOLD:
-            results["hold_events"] += 1
-            results["hold_hours"] += duration / 60
-            continue
-        if meeting_type == MeetingType.OOO:
-            results["ooo_events"] += 1
-            results["ooo_hours"] += duration / 60
+        # Track excluded types separately -- not counted in main tallies
+        if meeting_type.value in exclude_types:
+            results["excluded"][meeting_type.value]["count"] += 1
+            results["excluded"][meeting_type.value]["hours"] += duration / 60
             continue
 
         results["total_events"] += 1
@@ -192,6 +195,7 @@ def analyze_events(events: list[dict], config: dict) -> dict:
     results["by_hour_of_day"] = dict(results["by_hour_of_day"])
     results["participants"] = dict(results["participants"])
     results["organization_breakdown"] = dict(results["organization_breakdown"])
+    results["excluded"] = {k: dict(v) for k, v in results["excluded"].items()}
     results["duration_distribution"] = dict(results["duration_distribution"])
 
     return results
@@ -303,24 +307,21 @@ def get_top_participants(results: dict, n: int = 20) -> list[dict]:
 def get_summary_stats(results: dict) -> dict:
     """Compute high-level summary statistics."""
     total = results["total_events"]
+    excluded = dict(results.get("excluded", {}))
+
     if total == 0:
         return {
             "total_events": 0, "total_hours": 0,
-            "hold_events": results.get("hold_events", 0),
-            "hold_hours": round(results.get("hold_hours", 0), 1),
-            "ooo_events": results.get("ooo_events", 0),
-            "ooo_hours": round(results.get("ooo_hours", 0), 1),
+            "excluded": excluded,
             "daily_hours": results.get("daily_hours", {}),
         }
 
     type_counts = results["by_type"]
     avg_duration = (results["total_hours"] * 60) / total if total else 0
-    # Only count attendees on non-hold/non-ooo events
-    excluded_types = {"hold", "ooo"}
-    non_hold = [e for e in results["events"] if e.get("meeting_type") not in excluded_types]
     avg_attendees = (
-        sum(e["attendee_count"] for e in non_hold) / len(non_hold)
-        if non_hold else 0
+        sum(e["attendee_count"] for e in results["events"]
+            if e.get("meeting_type") in dict(type_counts))
+        / total if total else 0
     )
 
     # Meetings per working day (approximate)
@@ -344,9 +345,6 @@ def get_summary_stats(results: dict) -> dict:
         "oneoff_count": results["recurring_vs_oneoff"]["one-off"]["count"],
         "internal_hours": type_counts.get("internal", {}).get("total_hours", 0),
         "external_hours": type_counts.get("external", {}).get("total_hours", 0),
-        "hold_events": results.get("hold_events", 0),
-        "hold_hours": round(results.get("hold_hours", 0), 1),
-        "ooo_events": results.get("ooo_events", 0),
-        "ooo_hours": round(results.get("ooo_hours", 0), 1),
+        "excluded": excluded,
         "daily_hours": results.get("daily_hours", {}),
     }
