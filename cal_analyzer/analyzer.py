@@ -217,7 +217,10 @@ def _name_from_email(email: str) -> str:
 def _compute_daily_stats(
     daily_all: dict, daily_internal: dict, daily_external: dict,
 ) -> dict:
-    """Compute mean/median hours per day for all, internal, and external."""
+    """Compute mean/median hours per day for all, internal, and external.
+
+    Returns stats for both workdays-only (M-F) and all days.
+    """
     def _stats(values: list[float]) -> dict:
         if not values:
             return {"mean": 0.0, "median": 0.0, "days": 0}
@@ -227,13 +230,31 @@ def _compute_daily_stats(
             "days": len(values),
         }
 
-    all_vals = list(daily_all.values())
-    int_vals = list(daily_internal.values())
-    ext_vals = list(daily_external.values())
+    def _split(d: dict):
+        work = {}
+        every = {}
+        for day_key, val in d.items():
+            every[day_key] = val
+            dt = datetime.strptime(day_key, "%Y-%m-%d")
+            if dt.weekday() < 5:  # Mon-Fri
+                work[day_key] = val
+        return work, every
+
+    work_all, every_all = _split(daily_all)
+    work_int, every_int = _split(daily_internal)
+    work_ext, every_ext = _split(daily_external)
+
     return {
-        "all": _stats(all_vals),
-        "internal": _stats(int_vals),
-        "external": _stats(ext_vals),
+        "workdays": {
+            "all": _stats(list(work_all.values())),
+            "internal": _stats(list(work_int.values())),
+            "external": _stats(list(work_ext.values())),
+        },
+        "all_days": {
+            "all": _stats(list(every_all.values())),
+            "internal": _stats(list(every_int.values())),
+            "external": _stats(list(every_ext.values())),
+        },
     }
 
 

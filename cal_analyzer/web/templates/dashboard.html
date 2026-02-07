@@ -491,7 +491,7 @@
         <h1><span>{{ config.company_name }}</span> Calendar Analytics</h1>
         <div style="display:flex;align-items:center;gap:1rem">
             <span class="status" id="headerStatus"></span>
-            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.8.0</span>
+            <span style="font-size:0.7rem;color:var(--text-dim);opacity:0.6">v1.9.0</span>
         </div>
     </div>
 
@@ -537,7 +537,7 @@
                 <div class="loading-text" id="loadingText">Loading calendar events...</div>
                 <div class="loading-sub" id="loadingSub">Fetching and parsing your iCal data</div>
                 <button class="btn btn-sm" id="loadingCancel" style="display:none;background:var(--surface2);margin-top:0.5rem">Cancel</button>
-                <div style="font-size:0.65rem;color:var(--text-dim);opacity:0.5;margin-top:0.5rem" id="loadingVersion">v1.8.0</div>
+                <div style="font-size:0.65rem;color:var(--text-dim);opacity:0.5;margin-top:0.5rem" id="loadingVersion">v1.9.0</div>
             </div>
         </div>
 
@@ -704,6 +704,7 @@
     let currentPeriod = 'month';
     let currentFilter = 'all';
     let excludeTypes = new Set(['hold', 'ooo', 'all_day', 'solo']);
+    let workdaysOnly = true;
 
     const COLORS = {
         internal: '#22c55e',
@@ -1033,13 +1034,16 @@
         grid.innerHTML = '';
 
         const dh = s.daily_hours || {};
-        const dhAll = dh.all || {};
-        const dhInt = dh.internal || {};
-        const dhExt = dh.external || {};
+        const bucket = workdaysOnly ? (dh.workdays || {}) : (dh.all_days || {});
+        const dhAll = bucket.all || {};
+        const dhInt = bucket.internal || {};
+        const dhExt = bucket.external || {};
+        const dayLabel = workdaysOnly ? 'Work Day' : 'Day';
+        const dayToggle = `<span class="day-toggle" style="font-size:0.65rem;cursor:pointer;color:var(--accent);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px" onclick="workdaysOnly=!workdaysOnly;renderStats(analyticsData.summary,analyticsData.yoy)">${workdaysOnly ? 'incl. weekends' : 'work days only'}</span>`;
 
         // Exclusion note: show what types were excluded
         const excl = s.excluded || {};
-        const typeLabels = { hold: 'holds', ooo: 'OOO', all_day: 'all-day' };
+        const typeLabels = { hold: 'holds', ooo: 'OOO', all_day: 'all-day', solo: 'solo' };
         const excludedParts = [];
         for (const [t, info] of Object.entries(excl)) {
             if (info.count) {
@@ -1054,10 +1058,10 @@
 
         const cards = [
             { label: 'Total Meetings', value: s.total_events, sub: `${s.total_hours}h total ${holdNote}`, yoyKey: 'total_events' },
-            { label: 'Avg Hours / Day', value: `${dhAll.mean || 0}h`, sub: `median ${dhAll.median || 0}h across ${dhAll.days || 0} days`, color: COLORS.accent },
+            { label: `Avg Hours / ${dayLabel}`, value: `${dhAll.mean || 0}h`, sub: `median ${dhAll.median || 0}h across ${dhAll.days || 0} days ${dayToggle}`, color: COLORS.accent },
             { label: 'Per Work Day', value: s.meetings_per_working_day, sub: 'meetings on average', yoyKey: 'meetings_per_working_day' },
-            { label: 'Internal', value: s.internal_count, sub: `${s.internal_hours}h total, avg ${dhInt.mean || 0}h/day`, color: COLORS.internal, yoyKey: 'internal_count' },
-            { label: 'External', value: s.external_count, sub: `${s.external_hours}h total, avg ${dhExt.mean || 0}h/day`, color: COLORS.external, yoyKey: 'external_count' },
+            { label: 'Internal', value: s.internal_count, sub: `${s.internal_hours}h total, avg ${dhInt.mean || 0}h/${dayLabel.toLowerCase()}`, color: COLORS.internal, yoyKey: 'internal_count' },
+            { label: 'External', value: s.external_count, sub: `${s.external_hours}h total, avg ${dhExt.mean || 0}h/${dayLabel.toLowerCase()}`, color: COLORS.external, yoyKey: 'external_count' },
         ];
 
         cards.forEach(c => {
